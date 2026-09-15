@@ -1017,9 +1017,9 @@ function leaveCombat(){
     //new pokemon
 
 
-    let rarePkmnChance = 0.01
-    let shinyPkmnChance = 1/400
-    let shinyPkmnChanceEncounter = 1/120
+    let rarePkmnChance = 0.05
+    let shinyPkmnChance = 1/100
+    let shinyPkmnChanceEncounter = 1/20
     for (const slot in team) {
 
         if (team[slot].pkmn === undefined ) continue
@@ -1088,7 +1088,7 @@ function leaveCombat(){
         divTag = `<span>✦Shiny✦!</span>`
     }
 
-    if (pkmn[hatchedPkmn].shiny==true && giveStarsign(hatchedPkmn,`check`) != "complete" && rng(1/4000)){ //starsign
+    if (pkmn[hatchedPkmn].shiny==true && giveStarsign(hatchedPkmn,`check`) != "complete" && rng(1/200)){ //starsign
         giveStarsign(hatchedPkmn)
         divTag = `<span>☉Signed☉!</span>`
     }
@@ -1154,7 +1154,7 @@ function leaveCombat(){
         divTag = `<span>✦Shiny✦!</span>`
     }
 
-    if (pkmn[i].shiny==true && giveStarsign(i,`check`) != "complete" && rng(1/1200)){ //starsign
+    if (pkmn[i].shiny==true && giveStarsign(i,`check`) != "complete" && rng(1/40)){ //starsign
         giveStarsign(i)
         divTag = `<span>☉Signed☉!</span>`
     }
@@ -1535,7 +1535,7 @@ for (let i = activeBars; i < hpBars.length; i++) {
     }
 
 
-    if (rng(1/100000)) giveRibbon(team[exploreActiveMember].pkmn, "smile")
+    if (rng(1/1000)) giveRibbon(team[exploreActiveMember].pkmn, "smile")
 
 
     for (const buff in wildBuffs){ if ( wildBuffs[buff]>0) wildBuffs[buff] = 0 }
@@ -4740,6 +4740,37 @@ let rotationDimensionCurrent = 1;
 
 let dailySeed = 0
 
+function rotationBag(bagId, max) {
+  const rng = mulberry32((bagId * 0x9e3779b9) ^ (max * 0x85ebca6b))
+  const arr = []
+  for (let i = 0; i < max; i++) arr.push(i + 1)
+  for (let i = max - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1))
+    const temp = arr[i]
+    arr[i] = arr[j]
+    arr[j] = temp
+  }
+  return arr
+}
+
+function rotationShuffleValue(cycle, max) {
+  if (max == undefined || max < 1) max = 1
+  const bagIndex = ((cycle % max) + max) % max
+  const bagId = Math.floor(cycle / max)
+  if (max == 1) return 1
+  const arr = rotationBag(bagId, max)
+  if (max == 2) {
+    const anchor = rotationBag(0, 2)
+    return anchor[bagIndex]
+  }
+  if (arr[0] == rotationBag(bagId - 1, max)[max - 1]) {
+    const swap = arr[0]
+    arr[0] = arr[1]
+    arr[1] = swap
+  }
+  return arr[bagIndex]
+}
+
 function getSeed() {
 
 
@@ -4747,30 +4778,30 @@ function getSeed() {
 
   const now = new Date();
   const utcTime = now.getTime(); 
-  const halfDayNumber = Math.floor(utcTime / (1000 * 60 * 60 * 12));
+  const halfDayNumber = Math.floor(utcTime / (1000 * 60 * 60 * 2));
   const dayNumber = Math.floor(utcTime / (1000 * 60 * 60 * 24));
   dailySeed = dayNumber
 
 
-  rotationWildCurrent = ((halfDayNumber-6) % rotationWildMax) + 1;
+  rotationWildCurrent = rotationShuffleValue(halfDayNumber - 6, rotationWildMax);
 
-  rotationDungeonCurrent = (halfDayNumber % rotationDungeonMax) + 1;
+  rotationDungeonCurrent = rotationShuffleValue(halfDayNumber, rotationDungeonMax);
 
-  const period = Math.floor(dayNumber / 3);
-  rotationEventCurrent = ((period-3) % rotationEventMax) + 1;
-  rotationFrontierCurrent = (period % rotationFrontierMax) + 1;
-  rotationDimensionCurrent = (period % rotationDimensionMax) + 1;
+  const period = Math.floor(utcTime / (1000 * 60 * 60 * 8));
+  rotationEventCurrent = rotationShuffleValue(period - 3, rotationEventMax);
+  rotationFrontierCurrent = rotationShuffleValue(period, rotationFrontierMax);
+  rotationDimensionCurrent = rotationShuffleValue(period, rotationDimensionMax);
 
   return dayNumber;
 }
 
-let lastHalfDayNumber = Math.floor(Date.now() / (1000 * 60 * 60 * 12));
+let lastHalfDayNumber = Math.floor(Date.now() / (1000 * 60 * 60 * 2));
 
 function updateDailyCounters() {
   const contadores = document.querySelectorAll('.time-counter-daily');
 
   const ahora = Date.now();
-  const halfDayNumber = Math.floor(ahora / (1000 * 60 * 60 * 12));
+  const halfDayNumber = Math.floor(ahora / (1000 * 60 * 60 * 2));
 
   if (halfDayNumber !== lastHalfDayNumber) {
     lastHalfDayNumber = halfDayNumber;
@@ -4782,7 +4813,7 @@ function updateDailyCounters() {
     resetDailyTimers();
   }
 
-  const nextHalfDayStart = (halfDayNumber + 1) * (1000 * 60 * 60 * 12);
+  const nextHalfDayStart = (halfDayNumber + 1) * (1000 * 60 * 60 * 2);
   const diff = nextHalfDayStart - ahora;
 
   const horas = String(Math.floor(diff / 3600000)).padStart(2, '0');
@@ -4795,15 +4826,14 @@ function updateDailyCounters() {
 }
 
 let lastEventPeriod = Math.floor(
-  Math.floor(Date.now() / 86400000) / 3
+  Date.now() / (1000 * 60 * 60 * 8)
 );
 
 function updateEventCounters() {
   const contadores = document.querySelectorAll('.time-counter-event');
 
   const ahora = Date.now();
-  const dayNumber = Math.floor(ahora / 86400000);
-  const currentPeriod = Math.floor(dayNumber / 3);
+  const currentPeriod = Math.floor(ahora / (1000 * 60 * 60 * 8));
 
   if (currentPeriod !== lastEventPeriod) {
     lastEventPeriod = currentPeriod;
@@ -4814,7 +4844,7 @@ function updateEventCounters() {
 
   }
 
-  const nextPeriodStart = (currentPeriod + 1) * 3 * 86400000;
+  const nextPeriodStart = (currentPeriod + 1) * (1000 * 60 * 60 * 8);
   const diff = nextPeriodStart - ahora;
 
   const horas = String(Math.floor(diff / 3600000)).padStart(2, '0');
@@ -7087,8 +7117,8 @@ for (const i in areas) {
 
 function createFrontierTrainers(){ //fix by enyxiel
 
-    if (saved.lastFrontierRotation == rotationWildCurrent) return
-    if (saved.lastFrontierRotation != rotationWildCurrent) { saved.lastFrontierRotation = rotationWildCurrent }
+    if (saved.lastFrontierRotation == rotationFrontierCurrent) return
+    if (saved.lastFrontierRotation != rotationFrontierCurrent) { saved.lastFrontierRotation = rotationFrontierCurrent }
 
 
     saved.arenaCurrentTrainer = 1
@@ -8491,36 +8521,43 @@ function resetDailyTimers() {
 
 
 saved.lastPokerusReset = undefined
+
 function assignPokerus(){
-    if (areas.vsEliteFourLance.defeated!==true) return
+    if (areas.vsEliteFourLance.defeated !== true) return
 
-    if (saved.lastPokerusReset!=rotationWildCurrent){
-    saved.lastPokerusReset =rotationWildCurrent
+    const now = Date.now()
+    const twoHours = 1000 * 60 * 60 * 2
+    const currentPokerusRotation = Math.floor(now / twoHours)
 
+    if (saved.lastPokerusReset != currentPokerusRotation){
+        saved.lastPokerusReset = currentPokerusRotation
 
-    const eligiblePokemon = []
-    for (const i in pkmn){
-        if (pkmn[i].caught>0 && pkmn[i].hidden != true) eligiblePokemon.push(i)
-        if (pkmn[i].pokerus) {pkmn[i].pokerus = undefined; pkmn[i].tagPokerus = undefined}
+        const eligiblePokemon = []
 
+        for (const i in pkmn){
+            if (
+                pkmn[i].caught > 0 &&
+                pkmn[i].hidden != true &&
+                !pkmn[i].pokerus
+            ) {
+                eligiblePokemon.push(i)
+            }
+        }
+
+        // Pick 1 per 100 Pokemon without Pokerus
+        const pickCount = Math.max(1, Math.floor(eligiblePokemon.length / 100))
+
+        const selectedPokemon = arrayPick(eligiblePokemon, pickCount)
+
+        if (selectedPokemon.length == 0) return
+
+        for (const i of selectedPokemon) {
+            pkmn[i].pokerus = true
+            pkmn[i].tagPokerus = `pokerus`
+        }
+
+        setSearchTags()
     }
-
-    // pick 1 per 100 pokes you have
-    const pickCount = Math.max(1, Math.floor(eligiblePokemon.length / 100));
-
-    const selectedPokemon= arrayPick(eligiblePokemon, pickCount)
-
-    if (selectedPokemon.length==0) return
-
-    for (const i of selectedPokemon) {pkmn[i].pokerus = true; pkmn[i].tagPokerus = `pokerus`}
-
-
-    setSearchTags()
-
-
-    }
-
-
 }
 
 saved.geneticPokerus = false
@@ -8610,8 +8647,8 @@ document.getElementById("genetics-bar-power").style.width = `${(powerCost / 8) *
 if (powerCost >= 6) document.getElementById("genetics-bar-power").style.backgroundColor = `coral`
 else {document.getElementById("genetics-bar-power").style.backgroundColor = `rgb(229, 143, 255)`}
 
-let timeNeeded = ( 10 * powerCost ) *60
-if (item.replicatorUpgradeS.got>0) { timeNeeded = Math.max(10, ( 10 * powerCost )-30 ) *60 }
+let timeNeeded = powerCost * 60
+if (item.replicatorUpgradeS.got>0) { timeNeeded = Math.max(10, powerCost * 60 - 30 * 60) }
 const [h, m, x] = [
   (timeNeeded / 3600) | 0,
   ((timeNeeded % 3600) / 60) | 0,
@@ -8635,8 +8672,8 @@ if (pkmn[saved.geneticHost]?.hidden) document.getElementById("special-warning").
 let shinyChance = 1/100
 if (saved.geneticHost== undefined || saved.geneticSample == undefined) shinyChance = 0
 else {
-if (samplePkmn.shiny && compability == 2) shinyChance = 1/25
-if (samplePkmn.shiny && compability == 3) shinyChance = 1/5
+if (samplePkmn.shiny && compability == 2) shinyChance = 1/5
+if (samplePkmn.shiny && compability == 3) shinyChance = 1/2
 if (samplePkmn.shiny && compability == 4) shinyChance = 1/1
 if (pkmn[saved.geneticHost].hidden) shinyChance = 0
 if (pkmn[saved.geneticHost].shiny) shinyChance = 0
@@ -10588,3 +10625,12 @@ window.addEventListener('load', function() {
     if (saved.arenaCard1 == undefined) createArenaCards()
     //updateTeamExp()
 });
+
+
+
+
+
+
+
+
+
