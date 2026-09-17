@@ -4,7 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pokechill</title>
-    <link rel="icon" type="image/x-icon" href="/img/icons/icon.png">
+
+    <script>
+        // PokeChill environment detection.
+        // The Android app bundles the game and serves it from the appassets
+        // origin; GitHub Pages serves it from a regular host. This flag lets
+        // the offline build skip network-only features without changing the web version.
+        window.POKECHILL_OFFLINE = (window.location.hostname === 'appassets.androidplatform.net');
+        if (window.POKECHILL_OFFLINE) {
+            document.addEventListener('DOMContentLoaded', function () {
+                var discordButton = document.getElementById('discord-button');
+                if (discordButton) discordButton.style.display = 'none';
+            });
+        }
+    </script>
+
+    <link rel="icon" type="image/x-icon" href="img/icons/icon.png">
     <link rel="stylesheet" href="styles.css">
 
 
@@ -510,7 +525,7 @@
         document.getElementById("tooltipMid").style.display = `none`
         document.getElementById("tooltipBottom").innerHTML = `Made by <span onclick="secretFight(areas.missingArea.id)">Duck</span><br><br>Pokemon and trainer sprites by Pokemon Showdown (Including artists: Beliot419, kyledove, Gnomowladny, Brumirage and ZacWeavile. Go check their work. Now.)<br><br>Gen 9 sprites by KingOfThe-X-Roads<br><br><b>🔐 Secret Pokémon</b><br><br><b>Secret #1 — MissingNo.</b><br>Click on Duck in the Credits.<br><br><b>Secret #2 — F-00</b><br>Search <code>SHOWMEYOURSECRETS</code> in the search bar.<br><br><b>Secret #3 — Ghost</b><br>Make a Preview Team with Unown G, H, O, S and T, in that order.<br><br><b>Secret #4 — Crystal Onix</b><br>Give an Onix the name Crystal or Crystal Onix.<br><br><b>Secret #5 — Humanoid</b><br>Between 20:00 and 20:29, look for the UFO among your companions and click it.<br><br><b>Secret #6 — Aerodactyl B</b><br>Use Primal Earth.<br><br><b>Hidden Secret — Kabutops B</b><br>This secret is hidden in the code. No known method of obtaining it has been found yet.<br><br><b>Secret clue</b><br>When Mega Pinsir, Galarian Zapdos and Ting-Lu are showing, have all three Pokémon in your team.<br><br>All characters and related assets featured in this game are the exclusive property of Nintendo, Creatures Inc., and The Pokémon Company, and are used here strictly for non-commercial purposes.`
         openTooltip()' >Credits</div>
-            <div onclick="window.open('https://discord.gg/VnukKfSs3S', '_blank')">Discord</div>
+            <div id="discord-button" onclick="if (!window.POKECHILL_OFFLINE) window.open('https://discord.gg/VnukKfSs3S', '_blank')">Discord</div>
 
             <div style="margin-top: 3rem;background: rgb(206, 83, 83); color: white; " onclick='document.getElementById("tooltipTop").style.display = `none`
         document.getElementById("tooltipTitle").innerHTML = `Are you sure you want to delete all data forever?`

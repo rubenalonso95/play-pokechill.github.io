@@ -168,6 +168,18 @@ function exportData() {
   const raw = localStorage.getItem("gameData");
   if (!raw) return;
 
+  // PokeChill Android (offline): export through the native SAF bridge instead
+  // of a blob download (WebView has no download manager). The web version
+  // (POKECHILL_OFFLINE === false) keeps its original behaviour below.
+  if (window.POKECHILL_OFFLINE && window.AndroidBridge) {
+    window.AndroidBridge.saveJson(
+      `Pokechill-${new Date().toISOString().split("T")[0]}.json`,
+      "application/json",
+      raw
+    );
+    return;
+  }
+
   const blob = new Blob([raw], { type: "application/json" });
   const url = URL.createObjectURL(blob);
 
