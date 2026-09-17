@@ -856,6 +856,9 @@ frontierArray.sort((a, b) => a.data.tier - b.data.tier);
         if (ttdata === `ModAfk`) document.getElementById("tooltipTitle").innerHTML = `Longer AFK`
         if (ttdata === `ModAfk`) document.getElementById("tooltipBottom").innerHTML = `Fatigue damage is reduced by x3<br><br>There are no side-effects to this modifier`
 
+        if (ttdata === `ModSpeedBattle`) document.getElementById("tooltipTitle").innerHTML = `Speed Battles`
+        if (ttdata === `ModSpeedBattle`) document.getElementById("tooltipBottom").innerHTML = `Runs combat at the selected speed (1x - 10x). Only combat time is accelerated: attack charge bars, damage, skills, wild defeats and their respawns.<br><br>Global timers (raid timers, area rotations, dungeons, VS, events, cooldowns) and the AFK fast-forward always stay at real-time speed to avoid double acceleration<br><br>There are no side-effects to this modifier`
+
         if (ttdata === `curry`) document.getElementById("tooltipTitle").innerHTML = `Curry`
         if (ttdata === `curry`) document.getElementById("tooltipBottom").innerHTML = `Every 12h you can select up to three abilities to be active for your entire team during raids for 1 hour. These abilities follow the same rules as regular abilities, and wont stack with already existing ones`
 

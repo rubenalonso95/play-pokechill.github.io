@@ -1401,6 +1401,12 @@ function updateWildPkmn(){
 
     if (afkSeconds>0) respawnTimer = 0 //woomp woomp
 
+    // SPEED BATTLES: prioridad estricta —
+    //   1) AFK activo → respawnTimer = 0 (línea superior, intacta)
+    //   2) Speed Battles activo sin AFK → dividir por la velocidad
+    //   3) normal → comportamiento original sin cambios
+    if (afkSeconds <= 0 && typeof SpeedBattles !== "undefined" && SpeedBattles.factor() > 1) respawnTimer = Math.max(1, respawnTimer / SpeedBattles.factor())
+
 
 
 
@@ -1546,7 +1552,12 @@ for (let i = activeBars; i < hpBars.length; i++) {
     //document.getElementById(`pkmn-movebox-wild-${exploreCombatWildTurn}-bar`).style.width = "0%";
 
     document.getElementById("exploe-wild-hp").style.width = "0%"; 
-    voidAnimation(`explore-wild-sprite`,`wildPokemonDown ${respawnTimer+1}s 1`)
+    // SPEED BATTLES: la animación de muerte del salvaje se divide por la
+    // velocidad (solo sin AFK). respawnTimer ya llega dividido del bloque
+    // superior; aquí solo se divide el segundo fijo de animación (+1s).
+    let wildDownDuration = respawnTimer + 1
+    if (afkSeconds <= 0 && typeof SpeedBattles !== "undefined" && SpeedBattles.factor() > 1) wildDownDuration = Math.max(0.05, respawnTimer + 1 / SpeedBattles.factor())
+    voidAnimation(`explore-wild-sprite`,`wildPokemonDown ${wildDownDuration}s 1`)
 
     
 
@@ -2179,7 +2190,13 @@ function gameLoop(now) {
 
     if (delta > 250) delta = 250;
 
-    accumulator += delta;
+    // SPEED BATTLES: multiplica SOLO el tiempo de combate (los ticks del
+    // while de abajo son exploreCombatPlayer/exploreCombatWild, que es
+    // lógica estrictamente de combate). Durante el fast-forward de AFK no
+    // se acelera nada (sin doble aceleración), igual que el mod original.
+    // updateRaidTimer solo corre con afkSeconds > 0 (ruta NO acelerada),
+    // por lo que el timer de raids sigue SIEMPRE a tiempo real.
+    accumulator += (afkSeconds > 0) ? delta : delta * (typeof SpeedBattles !== "undefined" ? SpeedBattles.factor() : 1);
 
     let stepsExecuted = 0;
 
@@ -2213,6 +2230,10 @@ function gameLoop(now) {
 
 
     }
+
+    // SPEED BATTLES: sync visual de barras HP (solo speed>=5, solo escritura
+    // de estilos, 1 vez por frame — nunca lógica ni triggers)
+    if (typeof SpeedBattles !== "undefined") SpeedBattles.syncHpVisuals();
 
     requestAnimationFrame(gameLoop);
 }

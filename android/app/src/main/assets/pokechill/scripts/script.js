@@ -934,6 +934,14 @@ function updateSettings(alt){
   if (alt != true) if (saved.gamemodIvs == true) {document.getElementById("checkbox-mode-ivs").checked = true} else document.getElementById("checkbox-mode-ivs").checked = false
   if (alt == true) if (document.getElementById("checkbox-mode-ivs").checked) {  saved.gamemodIvs = true; } else saved.gamemodIvs = false
 
+  //Speed Battles (checkbox + selector de velocidad)
+  if (alt != true) {
+    if (SpeedBattles.isActive()) {document.getElementById("checkbox-mode-speedbattle").checked = true} else document.getElementById("checkbox-mode-speedbattle").checked = false
+    document.getElementById("settings-speedbattles").value = saved.speedBattles.speed
+    SpeedBattles.applyBodyClass()
+  }
+  if (alt == true) SpeedBattles.toggle(document.getElementById("checkbox-mode-speedbattle").checked)
+
   }
 
 

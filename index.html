@@ -514,7 +514,7 @@
             onclick='document.getElementById("tooltipTop").style.display = `none`
         document.getElementById("tooltipTitle").innerHTML = `Game Modifiers`
         document.getElementById("tooltipMid").style.display = `none`
-        document.getElementById("tooltipBottom").innerHTML = `Right Click/Long press to see the details<div id="tooltip-modifiers-list"><div style="pointer-events:none; background:#AD5957; color:white">Challenges</div> <div data-help="ModNuzloke"><span>Nuzloke Mode</span> <input type="checkbox" id="checkbox-mode-nuzloke" onclick="updateSettings(true)"></div>  <div data-help="ModHard"><span>Hard Mode</span> <input type="checkbox" id="checkbox-mode-hard" onclick="updateSettings(true)"></div> <div style="pointer-events:none; background:#57AD5D; color:white">Cheats</div>  <div data-help="ModNoIvs"><span>No IVs</span><input type="checkbox" id="checkbox-mode-ivs" onclick="updateSettings(true)"></div>  <div data-help="ModAfk"><span>Longer AFK</span><input type="checkbox" id="checkbox-mode-afk" onclick="updateSettings(true)"></div> </div>`
+        document.getElementById("tooltipBottom").innerHTML = `Right Click/Long press to see the details<div id="tooltip-modifiers-list"><div style="pointer-events:none; background:#AD5957; color:white">Challenges</div> <div data-help="ModNuzloke"><span>Nuzloke Mode</span> <input type="checkbox" id="checkbox-mode-nuzloke" onclick="updateSettings(true)"></div>  <div data-help="ModHard"><span>Hard Mode</span> <input type="checkbox" id="checkbox-mode-hard" onclick="updateSettings(true)"></div> <div style="pointer-events:none; background:#57AD5D; color:white">Cheats</div>  <div data-help="ModNoIvs"><span>No IVs</span><input type="checkbox" id="checkbox-mode-ivs" onclick="updateSettings(true)"></div>  <div data-help="ModAfk"><span>Longer AFK</span><input type="checkbox" id="checkbox-mode-afk" onclick="updateSettings(true)"></div> <div data-help="ModSpeedBattle"><span>Speed Battles</span><input type="checkbox" id="checkbox-mode-speedbattle" onclick="updateSettings(true)"> <select id="settings-speedbattles" onchange="SpeedBattles.setSpeed(this.value)" style="width:auto;"><option value="1">1x</option><option value="2">2x</option><option value="3">3x</option><option value="5">5x</option><option value="10">10x</option></select></div> </div>`
         openTooltip(); updateSettings()'
         
         >Game modifiers</div>
@@ -1739,6 +1739,7 @@ Game Guide
 
 
 
+    <script src="scripts/speedBattles.js"></script>
     <script src="scripts/script.js"></script>
     <script src="scripts/teams.js"></script>
     <script src="scripts/explore.js"></script>
