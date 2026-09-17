@@ -1,4 +1,5 @@
 saved.firstTimePlaying = true //esta flag se tiene que quitar cuando seleccione el pkmn, es lo que hace que no puedas guardar
+if (!saved.movePresets || typeof saved.movePresets !== "object" || Array.isArray(saved.movePresets)) saved.movePresets = {}
 
 
 function saveGame() {
@@ -91,6 +92,7 @@ function loadGame() {
   const data = JSON.parse(raw);
 
   if (data.saved !== undefined) saved = data.saved;
+  if (!saved.movePresets || typeof saved.movePresets !== "object" || Array.isArray(saved.movePresets)) saved.movePresets = {}
   if (data.team !== undefined) team = data.team;
 
   for (const i in item) {

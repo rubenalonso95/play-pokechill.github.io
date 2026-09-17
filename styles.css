@@ -1410,6 +1410,98 @@ border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 0.3rem;
 }
 
+/* Move presets use the editor palette and team button styling. */
+#pkmn-move-presets{
+    width: 95%;
+    flex-shrink: 0;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: var(--dark2);
+    color: var(--light2);
+    border-radius: 0.3rem;
+}
+
+#pkmn-move-presets .pkmn-editor-learnt-move-title{
+    width: 100%;
+    height: auto;
+    padding: 0.2rem;
+    font-size: 1.1rem;
+}
+
+#pkmn-move-presets .move-presets-fields,
+#pkmn-move-presets .move-presets-actions{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+}
+
+#pkmn-move-presets label{
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    flex: 1 1 10rem;
+    min-width: 0;
+    font-size: 0.85rem;
+}
+
+#pkmn-move-presets select,
+#pkmn-move-presets input{
+    width: 100%;
+    min-width: 0;
+    min-height: 2.5rem;
+    padding: 0.4rem;
+    border: 1px solid var(--light1);
+    border-radius: 0.3rem;
+    background: var(--dark1);
+    color: var(--light2);
+    font-size: 1rem;
+}
+
+#pkmn-move-presets input{
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+#pkmn-move-presets input::placeholder{
+    color: var(--light2);
+    opacity: 0.6;
+}
+
+#pkmn-move-presets .team-header-button{
+    flex: 1 1 5.5rem;
+    width: auto;
+    min-height: 2.5rem;
+    height: auto;
+    padding: 0.4rem;
+    border: 1px solid var(--light1);
+    color: var(--light2);
+    font-size: 0.9rem;
+    white-space: normal;
+}
+
+#pkmn-move-presets button:disabled{
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+}
+
+#pkmn-move-presets :is(button, select, input):focus-visible{
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+#pkmn-move-presets [role="status"]{
+    display: block;
+    margin-top: 0.4rem;
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+}
+
+#pkmn-move-presets [role="status"]:empty{
+    display: none;
+}
+
 #pkmn-editor-current-moves{
     width: 95%;
     padding: 0;

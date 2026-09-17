@@ -1,3 +1,82 @@
+// Native move presets. Names are stored as own properties, never rendered as HTML.
+function normalizeMovePresets() {
+    if (!saved.movePresets || typeof saved.movePresets !== "object" || Array.isArray(saved.movePresets)) saved.movePresets = {}
+    return saved.movePresets
+}
+
+function createMovePreset(name, pokemonId) {
+    const presets = normalizeMovePresets()
+    name = typeof name === "string" ? name.trim() : ""
+    if (!name || !pkmn[pokemonId]?.moves || Object.prototype.hasOwnProperty.call(presets, name)) return false
+    Object.defineProperty(presets, name, {
+        value: [1, 2, 3, 4].map(i => pkmn[pokemonId].moves[`slot${i}`] ?? null),
+        enumerable: true, configurable: true, writable: true
+    })
+    saveGame()
+    return true
+}
+
+function deleteMovePreset(name) {
+    const presets = normalizeMovePresets()
+    if (!Object.prototype.hasOwnProperty.call(presets, name)) return false
+    delete presets[name]
+    saveGame()
+    return true
+}
+
+function renameMovePreset(name, newName) {
+    const presets = normalizeMovePresets()
+    newName = typeof newName === "string" ? newName.trim() : ""
+    if (!Object.prototype.hasOwnProperty.call(presets, name) || !newName || Object.prototype.hasOwnProperty.call(presets, newName)) return false
+    Object.defineProperty(presets, newName, {
+        value: presets[name], enumerable: true, configurable: true, writable: true
+    })
+    delete presets[name]
+    saveGame()
+    return true
+}
+
+function applyMovePreset(name, pokemonId) {
+    const presets = normalizeMovePresets()
+    const pokemon = pkmn[pokemonId]
+    if (!Object.prototype.hasOwnProperty.call(presets, name) || !Array.isArray(presets[name]) || !pokemon?.moves || !Array.isArray(pokemon.movepool)) return "Invalid preset or Pokemon"
+
+    const slots = ["slot1", "slot2", "slot3", "slot4"]
+    const next = {}
+    const used = new Set()
+    // Preserve valid preset slots; never assign an ID outside the destination pool.
+    slots.forEach((slot, i) => {
+        const id = presets[name][i]
+        if (id != null && pokemon.movepool.includes(id) && move[id] && !used.has(id)) {
+            next[slot] = id
+            used.add(id)
+        } else next[slot] = undefined
+    })
+    // Same empty-slot fallback as updateMovepool(): descending power, no duplicates.
+    const legal = pokemon.movepool.filter(id => id != null && move[id])
+        .sort((a, b) => (move[b].power ?? 0) - (move[a].power ?? 0))
+    for (const id of legal) {
+        const slot = slots.find(key => next[key] === undefined)
+        if (slot === undefined) break
+        if (!used.has(id)) {
+            next[slot] = id
+            used.add(id)
+        }
+    }
+    const changed = slots.filter(slot => next[slot] !== pokemon.moves[slot])
+    if (!changed.length) return ""
+    // Keep the native editor's battle restrictions; validate before any mutation.
+    if (pokemon.battling == true) {
+        if ((areas[saved.currentArea]?.trainer && saved.currentArea != undefined) || areas[saved.currentArea]?.type == "frontier" || saved.currentArea == areas.training.id) return "Moves cannot be freely switched at this moment"
+        if (saved.currentArea != undefined && changed.some(slot => move[next[slot]]?.restricted)) return "Restricted moves cannot be freely switched during combat"
+    }
+    for (const slot of slots) pokemon.moves[slot] = next[slot]
+    saveGame()
+    return ""
+}
+
+// End native move preset operations.
+
 
 
 
@@ -1595,8 +1674,75 @@ const sortedMovepool = movepool
 
     updateMovepool()
 
-
-
+    // Recreate controls for the currently opened Pokemon; do not alter its moves.
+    document.getElementById("pkmn-move-presets")?.remove()
+    const presetControls = document.createElement("div")
+    presetControls.id = "pkmn-move-presets"
+    presetControls.innerHTML = `<div class="pkmn-editor-learnt-move-title">Move Presets</div>
+        <div class="move-presets-fields">
+            <label>Saved presets<select aria-label="Move preset"></select></label>
+            <label>Preset name<input type="text" aria-label="Preset name" placeholder="Preset name"></label>
+        </div>
+        <div class="move-presets-actions">
+            <button type="button" class="team-header-button">Save current</button>
+            <button type="button" class="team-header-button">Apply</button>
+            <button type="button" class="team-header-button">Delete</button>
+            <button type="button" class="team-header-button">Rename</button>
+        </div>
+        <span role="status"></span>`
+    document.getElementById("pkmn-editor-current-moves").before(presetControls)
+    const presetSelect = presetControls.querySelector("select")
+    const presetName = presetControls.querySelector("input")
+    const presetStatus = presetControls.querySelector('[role="status"]')
+    const [presetSave, presetApply, presetDelete, presetRename] = presetControls.querySelectorAll("button")
+    function refreshMovePresets(selected) {
+        presetSelect.replaceChildren()
+        for (const name of Object.keys(normalizeMovePresets())) {
+            const option = document.createElement("option")
+            option.value = name
+            option.textContent = name
+            presetSelect.appendChild(option)
+        }
+        if (selected !== undefined) presetSelect.value = selected
+        presetApply.disabled = presetDelete.disabled = presetRename.disabled = presetSelect.options.length === 0
+    }
+    presetSave.onclick = () => {
+        const name = presetName.value.trim()
+        if (!createMovePreset(name, ttdata)) {
+            presetStatus.textContent = "Enter a unique preset name"
+            return
+        }
+        refreshMovePresets(name)
+        presetStatus.textContent = "Preset saved"
+    }
+    presetApply.onclick = () => {
+        const error = applyMovePreset(presetSelect.value, ttdata)
+        if (error) { presetStatus.textContent = error; return }
+        moveSlotReplace = undefined
+        document.getElementById("pkmn-editor-movepool").innerHTML = ""
+        updateMovepool()
+        document.getElementById("pkmn-editor-current-moves").innerHTML = ""
+        updateMoves()
+        document.getElementById("explore-team").innerHTML = ""
+        setPkmnTeam()
+        presetStatus.textContent = "Preset applied (legal moves only)"
+    }
+    presetDelete.onclick = () => {
+        if (deleteMovePreset(presetSelect.value)) {
+            refreshMovePresets()
+            presetStatus.textContent = "Preset deleted"
+        }
+    }
+    presetRename.onclick = () => {
+        const name = presetName.value.trim()
+        if (!renameMovePreset(presetSelect.value, name)) {
+            presetStatus.textContent = "Enter a unique preset name"
+            return
+        }
+        refreshMovePresets(name)
+        presetStatus.textContent = "Preset renamed"
+    }
+    refreshMovePresets()
 
     }
 
