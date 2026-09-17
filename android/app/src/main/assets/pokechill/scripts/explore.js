@@ -4969,6 +4969,10 @@ document.getElementById("pokedex-filter-evolution").addEventListener("change", e
   updatePokedex()
 });
 
+document.getElementById("pokedex-filter-pokerus").addEventListener("change", e => {
+  updatePokedex()
+});
+
 function resetPokedexFilters(){
     tagSystemTagSearch = []
 
@@ -4984,6 +4988,7 @@ function resetPokedexFilters(){
     document.getElementById("pokedex-filter-shiny").value = "all";
     document.getElementById("pokedex-filter-signature").value = "all";
     document.getElementById("pokedex-filter-ribbon").value = "all";
+    document.getElementById("pokedex-filter-pokerus").value = "all";
 }
 
 
@@ -5244,6 +5249,7 @@ function updatePokedex(){
         if (document.getElementById(`pokedex-filter-shiny`).value == "false" && pkmn[i].shiny == true) continue
         if (document.getElementById(`pokedex-filter-shiny`).value == "sign" && (pkmn[i].starsignList == undefined || pkmn[i].shiny != true || giveStarsign(i,"check") == "complete") ) continue
         if (document.getElementById(`pokedex-filter-shiny`).value == "signall" && giveStarsign(i,"check") != "complete") continue
+        if (document.getElementById(`pokedex-filter-pokerus`).value == "true" && pkmn[i].pokerus != true) continue
 
 
         if (tagSystemTagSearch.length > 0) { //tag system
