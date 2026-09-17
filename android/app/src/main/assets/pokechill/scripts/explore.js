@@ -1860,6 +1860,7 @@ for (const i in team) {
         if (pkmn[ team[i].pkmn.id ].level >= pkmn[team[i].pkmn.id].evolve()[1].level && pkmn[ pkmn[team[i].pkmn.id].evolve()[1].pkmn.id ].caught===0) {
 
                 givePkmn(pkmn[ pkmn[team[i].pkmn.id].evolve()[1].pkmn.id ],1)
+                if (pkmn[team[i].pkmn.id].shiny === true) pkmn[pkmn[team[i].pkmn.id].evolve()[1].pkmn.id].shiny = true
 
         } 
 
@@ -5489,6 +5490,7 @@ if (document.getElementById("pokedex-search").value!="") {
 
             div.addEventListener("click", e => { 
                 givePkmn(pkmn[ pkmn[i].evolve()[evo].pkmn.id ],1)
+                if (pkmn[i].shiny === true) pkmn[pkmn[i].evolve()[evo].pkmn.id].shiny = true
                 item[evoItemToUse].got--
                 document.getElementById("tooltipTop").style.display = "none"    
                 document.getElementById("tooltipMid").style.display = "none"
@@ -5562,6 +5564,7 @@ if (document.getElementById("pokedex-search").value!="") {
         if (pkmn[ i ].evolve && pkmn[i].evolve()[1].level>0){ // if it evolves by level up
         if (pkmn[ i ].level >= pkmn[i].evolve()[1].level && pkmn[ pkmn[i].evolve()[1].pkmn.id ].caught===0) {
         givePkmn(pkmn[ pkmn[i].evolve()[1].pkmn.id ],1)
+        if (pkmn[i].shiny === true) pkmn[pkmn[i].evolve()[1].pkmn.id].shiny = true
         } 
         }
 
@@ -8989,6 +8992,7 @@ training.level = {
         if (pkmn[ saved.trainingPokemon ].evolve && pkmn[saved.trainingPokemon].evolve()[1].level>0){ // if it evolves by level up
         if (pkmn[ saved.trainingPokemon ].level >= pkmn[saved.trainingPokemon].evolve()[1].level && pkmn[ pkmn[saved.trainingPokemon].evolve()[1].pkmn.id ].caught===0) {
         givePkmn(pkmn[ pkmn[saved.trainingPokemon].evolve()[1].pkmn.id ],1)
+        if (pkmn[saved.trainingPokemon].shiny === true) pkmn[pkmn[saved.trainingPokemon].evolve()[1].pkmn.id].shiny = true
         } 
         }
 
