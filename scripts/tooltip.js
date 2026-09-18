@@ -1,13 +1,46 @@
-// Native move presets. Names are stored as own properties, never rendered as HTML.
+// Native move presets, stored per Pokemon: saved.movePresets[pokemonId][presetName] = [moveId, ...].
+// Names are stored as own properties, never rendered as HTML.
 function normalizeMovePresets() {
     if (!saved.movePresets || typeof saved.movePresets !== "object" || Array.isArray(saved.movePresets)) saved.movePresets = {}
     return saved.movePresets
 }
 
-function createMovePreset(name, pokemonId) {
+// Old saves kept presets globally, so their Pokemon cannot be known: park those once in saved.movePresetsLegacy.
+function migrateMovePresets() {
     const presets = normalizeMovePresets()
+    const legacyNames = Object.keys(presets).filter(name => Array.isArray(presets[name]))
+    if (!legacyNames.length) return presets
+    const legacy = saved.movePresetsLegacy && typeof saved.movePresetsLegacy === "object" && !Array.isArray(saved.movePresetsLegacy) ? saved.movePresetsLegacy : {}
+    for (const name of legacyNames) {
+        if (!Object.prototype.hasOwnProperty.call(legacy, name)) legacy[name] = presets[name]
+        delete presets[name]
+    }
+    saved.movePresetsLegacy = legacy
+    return presets
+}
+
+function getMovePresets(pokemonId) {
+    const presets = migrateMovePresets()
+    const key = String(pokemonId)
+    if (!Object.prototype.hasOwnProperty.call(presets, key)) return {}
+    const bucket = presets[key]
+    return bucket && typeof bucket === "object" && !Array.isArray(bucket) ? bucket : {}
+}
+
+function ensureMovePresets(pokemonId) {
+    const presets = migrateMovePresets()
+    const key = String(pokemonId)
+    if (!Object.prototype.hasOwnProperty.call(presets, key) || !presets[key] || typeof presets[key] !== "object" || Array.isArray(presets[key])) {
+        Object.defineProperty(presets, key, { value: {}, enumerable: true, configurable: true, writable: true })
+    }
+    return presets[key]
+}
+
+function createMovePreset(name, pokemonId) {
     name = typeof name === "string" ? name.trim() : ""
-    if (!name || !pkmn[pokemonId]?.moves || Object.prototype.hasOwnProperty.call(presets, name)) return false
+    if (!name || !pkmn[pokemonId]?.moves) return false
+    const presets = ensureMovePresets(pokemonId)
+    if (Object.prototype.hasOwnProperty.call(presets, name)) return false
     Object.defineProperty(presets, name, {
         value: [1, 2, 3, 4].map(i => pkmn[pokemonId].moves[`slot${i}`] ?? null),
         enumerable: true, configurable: true, writable: true
@@ -16,16 +49,16 @@ function createMovePreset(name, pokemonId) {
     return true
 }
 
-function deleteMovePreset(name) {
-    const presets = normalizeMovePresets()
+function deleteMovePreset(name, pokemonId) {
+    const presets = getMovePresets(pokemonId)
     if (!Object.prototype.hasOwnProperty.call(presets, name)) return false
     delete presets[name]
     saveGame()
     return true
 }
 
-function renameMovePreset(name, newName) {
-    const presets = normalizeMovePresets()
+function renameMovePreset(name, newName, pokemonId) {
+    const presets = getMovePresets(pokemonId)
     newName = typeof newName === "string" ? newName.trim() : ""
     if (!Object.prototype.hasOwnProperty.call(presets, name) || !newName || Object.prototype.hasOwnProperty.call(presets, newName)) return false
     Object.defineProperty(presets, newName, {
@@ -37,7 +70,7 @@ function renameMovePreset(name, newName) {
 }
 
 function applyMovePreset(name, pokemonId) {
-    const presets = normalizeMovePresets()
+    const presets = getMovePresets(pokemonId)
     const pokemon = pkmn[pokemonId]
     if (!Object.prototype.hasOwnProperty.call(presets, name) || !Array.isArray(presets[name]) || !pokemon?.moves || !Array.isArray(pokemon.movepool)) return "Invalid preset or Pokemon"
 
@@ -1697,7 +1730,7 @@ const sortedMovepool = movepool
     const [presetSave, presetApply, presetDelete, presetRename] = presetControls.querySelectorAll("button")
     function refreshMovePresets(selected) {
         presetSelect.replaceChildren()
-        for (const name of Object.keys(normalizeMovePresets())) {
+        for (const name of Object.keys(getMovePresets(ttdata))) {
             const option = document.createElement("option")
             option.value = name
             option.textContent = name
@@ -1728,14 +1761,14 @@ const sortedMovepool = movepool
         presetStatus.textContent = "Preset applied (legal moves only)"
     }
     presetDelete.onclick = () => {
-        if (deleteMovePreset(presetSelect.value)) {
+        if (deleteMovePreset(presetSelect.value, ttdata)) {
             refreshMovePresets()
             presetStatus.textContent = "Preset deleted"
         }
     }
     presetRename.onclick = () => {
         const name = presetName.value.trim()
-        if (!renameMovePreset(presetSelect.value, name)) {
+        if (!renameMovePreset(presetSelect.value, name, ttdata)) {
             presetStatus.textContent = "Enter a unique preset name"
             return
         }
