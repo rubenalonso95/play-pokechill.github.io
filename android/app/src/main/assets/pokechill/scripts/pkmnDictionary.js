@@ -20191,6 +20191,7 @@ for (const i in pkmn){
      pkmn[i].level = 1
      pkmn[i].movepool = []
      pkmn[i].newMoves = []
+     pkmn[i].permanentSkills = []
 
     pkmn[i].ivs = {
         hp:0,

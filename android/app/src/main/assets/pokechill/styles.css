@@ -3642,6 +3642,17 @@ background:
 #pkmn-edit-ability svg{
     margin-left: 0.3rem;
 }
+#pkmn-edit-ability-list{
+    height: auto;
+    max-height: 8rem;
+    overflow-y: auto;
+    cursor: default;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.3rem;
+    background: transparent;
+    padding: 0 0.2rem;
+}
 
 .ability-uncommon{
     outline: solid #F0E07D 2px;

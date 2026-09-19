@@ -63,6 +63,7 @@ function saveGame() {
     data[i].shiny = pkmn[i].shiny;
     data[i].shinyDisabled = pkmn[i].shinyDisabled;
     data[i].hiddenAbilityUnlocked = pkmn[i].hiddenAbilityUnlocked;
+    data[i].permanentSkills = pkmn[i].permanentSkills;
     data[i].tag = pkmn[i].tag;
     data[i].ribbons = pkmn[i].ribbons;
     data[i].pokerus = pkmn[i].pokerus;
@@ -147,6 +148,7 @@ function loadGame() {
       pkmn[i].shiny = data[i].shiny;
       pkmn[i].shinyDisabled = data[i].shinyDisabled;
       pkmn[i].hiddenAbilityUnlocked = data[i].hiddenAbilityUnlocked;
+      pkmn[i].permanentSkills = data[i].permanentSkills;
       pkmn[i].tag = data[i].tag;
       pkmn[i].ribbons = data[i].ribbons;
       pkmn[i].pokerus = data[i].pokerus;
@@ -163,6 +165,11 @@ function loadGame() {
     }
   }
 
+  // Permanent skills: normalise old saves and always keep the current ability unlocked
+  for (const i in pkmn) {
+    if (!Array.isArray(pkmn[i].permanentSkills)) pkmn[i].permanentSkills = []
+    unlockPermanentSkill(i, pkmn[i].ability)
+  }
 }
 
 

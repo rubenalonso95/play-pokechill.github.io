@@ -160,7 +160,7 @@ function givePkmn(poke, level) {
 
 
 
-    poke.ability = learnPkmnAbility(poke.id);
+    setPkmnAbility(poke.id, learnPkmnAbility(poke.id));
 
     if (rng(1/400)) poke.shiny = true
 
@@ -1078,7 +1078,7 @@ function leaveCombat(){
         const newMove = learnPkmnMove(hatchedPkmn,1)
         pkmn[hatchedPkmn].movepool.push(newMove)
         pkmn[hatchedPkmn].moves.slot1 = newMove 
-        pkmn[hatchedPkmn].ability = learnPkmnAbility(pkmn[hatchedPkmn].id)    
+        setPkmnAbility(hatchedPkmn, learnPkmnAbility(pkmn[hatchedPkmn].id))
         divTag = `<span>New!</span>`
     } 
 
@@ -1144,7 +1144,7 @@ function leaveCombat(){
         const newMove = learnPkmnMove(i,1)
         pkmn[i].movepool.push(newMove)
         pkmn[i].moves.slot1 = newMove 
-        pkmn[i].ability = learnPkmnAbility(pkmn[i].id)    
+        setPkmnAbility(i, learnPkmnAbility(pkmn[i].id))
         divTag = `<span>New!</span>`
     } 
 
@@ -1859,7 +1859,7 @@ for (const i in team) {
 
         if (pkmn[ team[i].pkmn.id ].level >= pkmn[team[i].pkmn.id].evolve()[1].level && pkmn[ pkmn[team[i].pkmn.id].evolve()[1].pkmn.id ].caught===0) {
 
-                givePkmn(pkmn[ pkmn[team[i].pkmn.id].evolve()[1].pkmn.id ],1)
+                inheritPermanentSkills(team[i].pkmn.id, pkmn[team[i].pkmn.id].evolve()[1].pkmn.id); givePkmn(pkmn[ pkmn[team[i].pkmn.id].evolve()[1].pkmn.id ],1)
                 if (pkmn[team[i].pkmn.id].shiny === true) pkmn[pkmn[team[i].pkmn.id].evolve()[1].pkmn.id].shiny = true
 
         } 
@@ -5161,7 +5161,7 @@ function applySingleRareCandy(pkmnId, applyPokedex = true){
         //this really should be a function huh
         if (pkmn[ pkmnId ].evolve && pkmn[pkmnId].evolve()[1].level>0){ // if it evolves by level up
         if (pkmn[ pkmnId ].level >= pkmn[pkmnId].evolve()[1].level && pkmn[ pkmn[pkmnId].evolve()[1].pkmn.id ].caught===0) {
-        givePkmn(pkmn[ pkmn[pkmnId].evolve()[1].pkmn.id ],1)
+        inheritPermanentSkills(pkmnId, pkmn[pkmnId].evolve()[1].pkmn.id); givePkmn(pkmn[ pkmn[pkmnId].evolve()[1].pkmn.id ],1)
         if (pkmn[pkmnId].shiny === true) pkmn[pkmn[pkmnId].evolve()[1].pkmn.id].shiny = true
         }
         }
@@ -5422,7 +5422,7 @@ function updatePokedex(){
     //create an array, used for sorting
     for (const i in pkmn) {
         //filters
-        if (pkmn[i].ability == undefined) pkmn[i].ability = learnPkmnAbility(pkmn[i].id)   
+        if (pkmn[i].ability == undefined) setPkmnAbility(i, learnPkmnAbility(pkmn[i].id))
         if (document.getElementById(`pokedex-filter-type`).value !== "all" && !pkmn[i].type.includes(document.getElementById(`pokedex-filter-type`).value)) continue
         if (document.getElementById(`pokedex-filter-type-2`).value !== "all" && !pkmn[i].type.includes(document.getElementById(`pokedex-filter-type-2`).value)) continue
         if (document.getElementById(`pokedex-filter-level`).value !== "all" && !( pkmn[i].level <= (document.getElementById(`pokedex-filter-level`).value) &&  pkmn[i].level >= (document.getElementById(`pokedex-filter-level`).value-19) )    ) continue
@@ -5647,7 +5647,7 @@ if (document.getElementById("pokedex-search").value!="") {
 
 
             div.addEventListener("click", e => { 
-                pkmn[i].ability = memoryToTeach
+                setPkmnAbility(i, memoryToTeach)
                 item[memoryToTeach+"Memory"].got--
                 updateItemBag()
                 exitTmTeaching()
@@ -5682,7 +5682,7 @@ if (document.getElementById("pokedex-search").value!="") {
 
 
             div.addEventListener("click", e => { 
-                givePkmn(pkmn[ pkmn[i].evolve()[evo].pkmn.id ],1)
+                inheritPermanentSkills(i, pkmn[i].evolve()[evo].pkmn.id); givePkmn(pkmn[ pkmn[i].evolve()[evo].pkmn.id ],1)
                 if (pkmn[i].shiny === true) pkmn[pkmn[i].evolve()[evo].pkmn.id].shiny = true
                 item[evoItemToUse].got--
                 document.getElementById("tooltipTop").style.display = "none"    
@@ -5827,7 +5827,7 @@ if (document.getElementById("pokedex-search").value!="") {
                 div.addEventListener("click", e => { 
 
                 const newAbility = learnPkmnAbility(i)
-                pkmn[i].ability = newAbility
+                setPkmnAbility(i, newAbility)
                 
                 item.abilityPatch.got--
                 
@@ -8882,12 +8882,12 @@ if (mod==="end"){
     if (itemUsed == "destinyKnot"){ //ability swap
     const hostAbility = pkmn[saved.geneticHost].ability
     const sampleAbility = pkmn[saved.geneticSample].ability
-    pkmn[saved.geneticHost].ability = sampleAbility
-    pkmn[saved.geneticSample].ability = hostAbility
+    setPkmnAbility(saved.geneticHost, sampleAbility)
+    setPkmnAbility(saved.geneticSample, hostAbility)
     summaryTags += `<div style="filter:hue-rotate(-50deg)">★ Ability swapped!</div>`
     } else {
     const newAbility = learnPkmnAbility(saved.geneticHost,10) //boosted chance
-    if (itemUsed=="everstone") {pkmn[saved.geneticHost].ability = newAbility; summaryTags += `<div style="filter:hue-rotate(-50deg)">★ New ability: ${format(newAbility)}!</div>`}
+    if (itemUsed=="everstone") {setPkmnAbility(saved.geneticHost, newAbility); summaryTags += `<div style="filter:hue-rotate(-50deg)">★ New ability: ${format(newAbility)}!</div>`}
     }
 
     pkmn[saved.geneticHost].movepool = []
@@ -9092,7 +9092,7 @@ training.level = {
         //this really should be a function huh 2.0
         if (pkmn[ saved.trainingPokemon ].evolve && pkmn[saved.trainingPokemon].evolve()[1].level>0){ // if it evolves by level up
         if (pkmn[ saved.trainingPokemon ].level >= pkmn[saved.trainingPokemon].evolve()[1].level && pkmn[ pkmn[saved.trainingPokemon].evolve()[1].pkmn.id ].caught===0) {
-        givePkmn(pkmn[ pkmn[saved.trainingPokemon].evolve()[1].pkmn.id ],1)
+        inheritPermanentSkills(saved.trainingPokemon, pkmn[saved.trainingPokemon].evolve()[1].pkmn.id); givePkmn(pkmn[ pkmn[saved.trainingPokemon].evolve()[1].pkmn.id ],1)
         if (pkmn[saved.trainingPokemon].shiny === true) pkmn[pkmn[saved.trainingPokemon].evolve()[1].pkmn.id].shiny = true
         } 
         }
@@ -9279,7 +9279,7 @@ training.ability = {
     color: `#69df96`,
     effect: function() {
         const newAbility = learnPkmnAbility(saved.trainingPokemon)
-        pkmn[saved.trainingPokemon].ability = newAbility
+        setPkmnAbility(saved.trainingPokemon, newAbility)
 
         setTimeout(() => {
         const div = document.createElement("span");

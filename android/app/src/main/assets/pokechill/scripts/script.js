@@ -653,6 +653,32 @@ function learnPkmnAbility(id,boost=1) {
 
     return pick;
 }
+//--Permanent skills: normal abilities a Pokemon has obtained stay unlocked for that Pokemon
+function unlockPermanentSkill(id, abilityId) {
+    if (abilityId == undefined) return false
+    if (pkmn[id] == undefined || ability[abilityId] == undefined) return false
+    if (pkmn[id].hiddenAbility?.id == abilityId) return false //hidden abilities are never part of this list
+    if (!Array.isArray(pkmn[id].permanentSkills)) pkmn[id].permanentSkills = []
+    if (pkmn[id].permanentSkills.includes(abilityId)) return false
+    pkmn[id].permanentSkills.push(abilityId)
+    return true
+}
+
+//--Sets the normal ability of a Pokemon and records it as permanently unlocked
+function setPkmnAbility(id, abilityId) {
+    if (abilityId == undefined || pkmn[id] == undefined) return false
+    pkmn[id].ability = abilityId
+    unlockPermanentSkill(id, abilityId)
+    return true
+}
+
+//--Evolutions inherit the unlocked abilities of the Pokemon they evolve from
+function inheritPermanentSkills(fromId, toId) {
+    if (fromId == undefined || toId == undefined || fromId === toId) return
+    if (pkmn[fromId] == undefined || pkmn[toId] == undefined) return
+    if (!Array.isArray(pkmn[fromId].permanentSkills)) return
+    for (const skill of pkmn[fromId].permanentSkills) unlockPermanentSkill(toId, skill)
+}
 
 
 document.getElementById('pokedex-menu').addEventListener('scroll', function() {
@@ -870,7 +896,7 @@ function infoPkmn(){
       {command:"pkmn.NAME.shiny=true", effect:"Modify Pokemon shiny status"},
       {command:"pkmn.NAME.ivs.hp=NUMBER", effect:"Modify Pokemon ivs (hp, atk, satk, def, sdef, spe)"},
       {command:"pkmn.NAME.movepool.push(move.NAME.id)", effect:"Add Pokemon Move"},
-      {command:"pkmn.NAME.ability=ability.NAME.id", effect:"Modify Pokemon Ability"},
+      {command:"setPkmnAbility('NAME', ability.NAME.id)", effect:"Modify Pokemon Ability (registers it as unlocked)"},
       {command:"pkmn.NAME.hiddenAbilityUnlocked=true", effect:"Unlock Hidden Ability"},
       ]);
 }

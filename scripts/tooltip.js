@@ -1424,7 +1424,7 @@ frontierArray.sort((a, b) => a.data.tier - b.data.tier);
 
 
     
-    if (pkmn[ttdata].ability == undefined) pkmn[ttdata].ability = learnPkmnAbility(pkmn[ttdata].id)    
+    if (pkmn[ttdata].ability == undefined) setPkmnAbility(ttdata, learnPkmnAbility(pkmn[ttdata].id))
     
     const abilityIcon = `<svg style="margin-right:0.3rem"xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M22.833 10.117L16.937 7.24c-.07-.035-.106-.106-.142-.177l-2.912-5.896c-.498-1.03-1.776-1.457-2.807-.96a2.1 2.1 0 0 0-.959.96L7.205 7.063a.8.8 0 0 1-.142.177l-5.896 2.913c-1.03.497-1.457 1.776-.96 2.806a2.1 2.1 0 0 0 .96.96l5.896 2.876c.07.036.106.107.142.142l2.948 5.896c.497 1.03 1.776 1.457 2.806.96a2.1 2.1 0 0 0 .959-.96l2.877-5.896c.036-.07.107-.142.142-.142l5.896-2.912c1.03-.498 1.457-1.776.96-2.806c-.178-.427-.533-.746-.96-.96m-4.368.427l-2.735 2.38c-.533.497-.924 1.136-1.066 1.847l-.71 3.551c-.036.143-.178.25-.32.214c-.071 0-.107-.036-.142-.107l-2.38-2.735c-.497-.533-1.137-.923-1.847-1.066l-3.552-.71c-.142-.035-.249-.178-.213-.32c0-.07.035-.106.106-.142l2.735-2.38c.533-.497.924-1.136 1.066-1.847l.71-3.551c.036-.143.178-.25.32-.214a.27.27 0 0 1 .142.071l2.38 2.735c.497.533 1.137.924 1.847 1.066l3.552.71c.142.036.249.178.213.32a.4.4 0 0 1-.106.178"/></svg>`
     let abilityTier = ``
@@ -1435,6 +1435,7 @@ frontierArray.sort((a, b) => a.data.tier - b.data.tier);
     if (ability[ pkmn[ttdata].ability ].rarity==3) document.getElementById("pkmn-edit-ability").classList.add("ability-rare")
     document.getElementById("pkmn-edit-ability").dataset.ability = pkmn[ttdata].ability
     document.getElementById("pkmn-edit-ability").innerHTML = `<span>${abilityIcon+format(pkmn[ttdata].ability)}</span>${abilityTier}`
+    renderPkmnEditorAbilityPicker(pkmn[ttdata])
 
 
     document.getElementById("pkmn-stats-lore").style.display = "none"
@@ -2169,6 +2170,57 @@ document.addEventListener("contextmenu", e => {
     if (el.dataset.seasonPreview !== undefined) {
         tooltipData("seasonPreview", el.dataset.seasonPreview)
     }
-
-
 });
+
+//--Permanent skills: lists the normal abilities the edited Pokemon has unlocked
+function renderPkmnEditorAbilityPicker(poke) {
+    const box = document.getElementById("pkmn-edit-ability")
+    if (!box) return
+
+    let list = document.getElementById("pkmn-edit-ability-list")
+    if (!list) {
+        list = document.createElement("div")
+        list.id = "pkmn-edit-ability-list"
+        box.closest(".pkmn-stats-stat-abilities").appendChild(list)
+    }
+
+    list.innerHTML = ""
+    list.style.display = "none"
+    box.style.cursor = "default"
+
+    //abilities unlocked by this Pokemon, hidden ability excluded
+    const skills = []
+    for (const id of poke.permanentSkills ?? []) {
+        if (ability[id] == undefined) continue
+        if (id == poke.hiddenAbility?.id) continue
+        if (skills.includes(id)) continue
+        skills.push(id)
+    }
+    if (skills.length < 2) return //nothing to pick from
+
+    box.style.cursor = "pointer"
+    for (const id of skills) {
+
+        const div = document.createElement("div")
+        if (ability[id].rarity == 2) div.classList.add("ability-uncommon")
+        if (ability[id].rarity == 3) div.classList.add("ability-rare")
+        div.style.cursor = "pointer"
+        div.dataset.ability = id
+        div.innerHTML = `<span>${format(id)}${id == poke.ability ? " ✔️" : ""}</span>`
+
+        div.addEventListener("click", e => {
+            if (!setPkmnAbility(poke.id, id)) return
+            saveGame()
+            tooltipData("pkmnEditor", poke.id)
+        })
+
+        list.appendChild(div)
+    }
+}
+
+//--Permanent skills: clicking the current ability opens/closes the unlocked ability list
+document.getElementById("pkmn-edit-ability")?.addEventListener("click", () => {
+    const list = document.getElementById("pkmn-edit-ability-list")
+    if (!list || list.children.length == 0) return
+    list.style.display = list.style.display == "flex" ? "none" : "flex"
+})
