@@ -297,8 +297,8 @@ function setWildPkmn(){
 
 
 
-    if (currentTrainingWave<=0) {  training[areas.training.currentTraining].effect(); leaveCombat(); setTrainingMenu(); return }
-
+    if (currentTrainingWave<=0) {
+        training[areas.training.currentTraining].effect(); leaveCombat(); wildPkmnHp = wildPkmnHpMax; return }
 
 
 
@@ -2014,6 +2014,7 @@ const nature = {
     relaxed : { spe: -1, hp: +1 },
     quiet : { atk: -1, satk: -1, hp: +1 },
     bold : { def: +1, sdef: +1, hp: -1 },
+    serious : {},
 }
 
 
@@ -2133,6 +2134,7 @@ function shouldCombatStop(){
     if (document.getElementById(`team-menu`).style.display === "flex") return true
     if (wildLevel===0) return true
     if (wildPkmnHp<0) return true
+    if (saved.currentArea == areas.training.id && currentTrainingWave <= 0) return true
     if (saved.currentArea === undefined) return true
     return false
 
@@ -9338,7 +9340,7 @@ training.move = { //disapears if you have 20+ moves or smth
 
 training.nature = {
     name: `Nature Training`,
-    info: `Grants, rerolls and removes natures, which modify BST Stars: <br><br>Adamant: Atk ▲, S.Atk ▼<br>Modest: S.Atk ▲, Atk ▼<br>Jolly: Spe ▲, Def ▼, S.Def ▼<br>Relaxed: HP ▲, Spe ▼<br>Quiet: HP ▲, Atk ▼, S.Atk ▼<br>Bold: Def ▲, S.Def ▲, HP ▼<br><br>Adamant and Modest can't be rolled if they'd buff the highest offensive stat of the Pokemon, neither a nature can exceed 6 stars or result in 0 speed stars`,
+    info: `Grants a chosen nature, which modifies BST Stars: <br><br>Adamant: Atk ▲, S.Atk ▼<br>Modest: S.Atk ▲, Atk ▼<br>Jolly: Spe ▲, Def ▼, S.Def ▼<br>Relaxed: HP ▲, Spe ▼<br>Quiet: HP ▲, Atk ▼, S.Atk ▼<br>Bold: Def ▲, S.Def ▲, HP ▼<br><br>Any nature except the Pokemon's current one can be chosen`,
     tier: 3,
     color: `#DF7A69`,
     condition: function() { if (areas.vsLegendTrainerBrendan.defeated == true) return true },
@@ -9346,33 +9348,98 @@ training.nature = {
     effect: function() {
         
 
-        const natureList = []
+        //every Pokemon can freely choose any nature, except the one it already has
+        const natureList = ["adamant", "modest", "jolly", "relaxed", "quiet", "bold", "serious"]
+        .filter(e => pkmn[saved.trainingPokemon].nature != e)
 
-        if (pkmn[saved.trainingPokemon].bst.atk<=pkmn[saved.trainingPokemon].bst.satk && pkmn[saved.trainingPokemon].nature != "adamant" && pkmn[saved.trainingPokemon].bst.atk<6) natureList.push("adamant")
-        if (pkmn[saved.trainingPokemon].bst.satk<=pkmn[saved.trainingPokemon].bst.atk && pkmn[saved.trainingPokemon].nature != "modest" && pkmn[saved.trainingPokemon].bst.satk<6) natureList.push("modest")
-        if (pkmn[saved.trainingPokemon].bst.def>1 && pkmn[saved.trainingPokemon].bst.sdef>1 && pkmn[saved.trainingPokemon].nature != "jolly" && pkmn[saved.trainingPokemon].bst.spe<6) natureList.push("jolly")
-        if (pkmn[saved.trainingPokemon].bst.spe>1 && pkmn[saved.trainingPokemon].nature != "relaxed" && pkmn[saved.trainingPokemon].bst.hp<6) natureList.push("relaxed")
-        if (pkmn[saved.trainingPokemon].bst.atk>1 && pkmn[saved.trainingPokemon].bst.satk>1 && pkmn[saved.trainingPokemon].nature != "quiet" && pkmn[saved.trainingPokemon].bst.hp<6) natureList.push("quiet")
-        if (pkmn[saved.trainingPokemon].bst.def>1 && pkmn[saved.trainingPokemon].bst.sdef>1 && pkmn[saved.trainingPokemon].nature != "bold" && pkmn[saved.trainingPokemon].bst.def<6 && pkmn[saved.trainingPokemon].bst.sdef<6) natureList.push("bold")
+        //degenerate native case (no valid nature) keeps the original instant behaviour
+        if (natureList.length == 0) {
+            let pickedNature = arrayPick(natureList)
+            pkmn[saved.trainingPokemon].nature = pickedNature
 
-            console.log(natureList)
-    
-        let pickedNature = arrayPick(natureList)
-        pkmn[saved.trainingPokemon].nature = pickedNature
+            setTimeout(() => {
+            const div = document.createElement("span");
+            div.innerHTML = `${format(saved.trainingPokemon)} now has a ${format(pickedNature)} nature!`
+            document.getElementById("area-end-moves-title").appendChild(div);
+            document.getElementById("area-end-moves-title").style.display = "flex"
+            document.getElementById("area-end-item-title").style.display = "none"
+            }, 10);
+            return
+        }
 
-        setTimeout(() => {
-        const div = document.createElement("span");
-        div.innerHTML = `${format(saved.trainingPokemon)} now has a ${format(pickedNature)} nature!`
-        document.getElementById("area-end-moves-title").appendChild(div);
-        document.getElementById("area-end-moves-title").style.display = "flex"
-        document.getElementById("area-end-item-title").style.display = "none"
-        }, 10);
+        //instead of a random roll, the player picks one of the valid natures
+        saved.pendingNatureChoice = { pkmn: saved.trainingPokemon, options: natureList.slice() }
 
     }
 }
 
+function openNatureChoiceMenu() {
+    const pending = saved.pendingNatureChoice
+    if (pending == undefined || !Array.isArray(pending.options)) return
+    if (pkmn[pending.pkmn] == undefined) { saved.pendingNatureChoice = undefined; return }
+
+    document.getElementById("tooltipTop").style.display = "none"
+    document.getElementById("tooltipTitle").innerHTML = `Select a nature for ${format(pending.pkmn)}`
+    document.getElementById("tooltipMid").innerHTML = `
+                <div id="nature-choicelist"></div>
+                `
+    document.getElementById("tooltipBottom").style.display = "none"
+
+    const statNames = { hp: `HP`, atk: `Atk`, def: `Def`, satk: `S.Atk`, sdef: `S.Def`, spe: `Spe` }
+
+    for (const e of pending.options) {
+        if (nature[e] == undefined) continue
+
+        const up = Object.keys(nature[e]).filter(s => nature[e][s] > 0).map(s => statNames[s]).join(", ")
+        const down = Object.keys(nature[e]).filter(s => nature[e][s] < 0).map(s => statNames[s]).join(", ")
+
+        const naturediv = document.createElement(`div`)
+        naturediv.className = `remember-move`
+        naturediv.style.flexDirection = `column`
+        naturediv.style.height = `auto`
+        naturediv.style.padding = `0.35rem 0`
+        if (up == "" && down == "") naturediv.innerHTML = `<b style="display:block">${format(e)}</b><span style="display:block">Sin cambios de stats</span>`
+        else naturediv.innerHTML = `<b style="display:block">${format(e)}</b><div style="display:flex; gap:0.3rem; white-space:nowrap"><span style="color:#29A1E5">↑ ${up}</span><span style="color:#DF7A69">↓ ${down}</span></div>`
+        naturediv.dataset.nature = e
+        document.getElementById(`nature-choicelist`).appendChild(naturediv)
+
+        naturediv.addEventListener("click", event => {
+            applyNatureChoice(e)
+        })
+    }
+
+    openTooltip()
+}
+
+function applyNatureChoice(pickedNature) {
+    const pending = saved.pendingNatureChoice
+    if (pending == undefined || !Array.isArray(pending.options)) return
+    if (pkmn[pending.pkmn] == undefined || nature[pickedNature] == undefined) return
+    if (!pending.options.includes(pickedNature)) return
+
+    const trainedId = pending.pkmn
+    pkmn[trainedId].nature = pickedNature
+    saved.pendingNatureChoice = undefined
+
+    closeTooltip()
+    saveGame()
+
+    //native completion message, same as the original random flow
+    const div = document.createElement("span");
+    div.innerHTML = `${format(trainedId)} now has a ${format(pickedNature)} nature!`
+    document.getElementById("area-end-moves-title").appendChild(div);
+    document.getElementById("area-end-moves-title").style.display = "flex"
+    document.getElementById("area-end-item-title").style.display = "none"
+
+    
+    setTrainingMenu()
+}
 
 function setTrainingMenu() {
+
+    //a pending nature choice (completion interrupted) reopens its selector
+    if (saved.pendingNatureChoice != undefined) openNatureChoiceMenu()
+
 
 
 
