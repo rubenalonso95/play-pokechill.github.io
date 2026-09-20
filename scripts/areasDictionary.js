@@ -6210,6 +6210,21 @@ areas.secretKabutops = {
     reward : [pkmn.kabutopsB],
 }
 
+areas.secretMew = {
+    background : `forest`,
+    trainer: true,
+    encounter: true,
+    unlockRequirement : function() { return true },
+    difficulty: tier4difficulty,
+    level : 110,
+    team : {
+        slot1 : pkmn.mew,
+        slot1Moves : [move.psychic.id, move.nastyPlot.id, move.auraSphere.id, move.iceBeam.id],
+    },
+    reward : [pkmn.mew],
+}
+
+
 
 const wildlifePoolCommon = [
     

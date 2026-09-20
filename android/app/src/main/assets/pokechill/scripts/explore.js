@@ -297,8 +297,8 @@ function setWildPkmn(){
 
 
 
-    if (currentTrainingWave<=0) {  training[areas.training.currentTraining].effect(); leaveCombat(); wildPkmnHp = wildPkmnHpMax; return }
-
+    if (currentTrainingWave<=0) {
+        training[areas.training.currentTraining].effect(); leaveCombat(); wildPkmnHp = wildPkmnHpMax; return }
 
 
 
@@ -9440,6 +9440,7 @@ function applyNatureChoice(pickedNature) {
     document.getElementById("area-end-moves-title").style.display = "flex"
     document.getElementById("area-end-item-title").style.display = "none"
 
+    
     setTrainingMenu()
 }
 
@@ -10072,20 +10073,36 @@ function pkmnWalk(){
     if (rng(1/80)) pickedPkmn = `ufo`
     }
 
+    // ===== MEW POKEWALK EVENT (independiente del UFO) =====
+    // Ventana: 08:00 hasta antes de 20:00 (no solapa con el UFO).
+    // TESTING: probabilidad 1/5 por intento válido. Para producción,
+    // bajar mewWalkChance (ej: 1/500) en esta única línea.
+    const mewWalkChance = 1/100
+    if (now.getHours() >= 8 && now.getHours() < 20 && pickedPkmn !== `ufo`) {
+        if (rng(mewWalkChance)) pickedPkmn = `mew`
+    }
+    // ===== END MEW POKEWALK EVENT =====
+
     if (pickedPkmn == undefined) return
 
     let shiny = `sprite`
     if (pkmn[pickedPkmn]?.shiny) shiny = `shiny`
 
-    if (pickedPkmn !== `ufo`) div.style.pointerEvents = "none"
+    if (pickedPkmn !== `ufo` && pickedPkmn !== `mew`) div.style.pointerEvents = "none"
     if (pickedPkmn == `ufo`){
        div.addEventListener("click", e => { 
             secretFight(areas.secretHumanoid.id);
         })
     }
 
+    // Mew: click handler independiente del UFO
+    if (pickedPkmn == `mew`){
+       div.addEventListener("click", e => {
+            secretFight(areas.secretMew.id);
+        })
+    }
 
-    if (pkmn[pickedPkmn]?.type.includes("flying") || pickedPkmn == `ufo`){
+    if (pkmn[pickedPkmn]?.type.includes("flying") || pickedPkmn == `ufo` || pickedPkmn == `mew`){
 
     let position = random(5,50)
     div.style.top = `${position}%`
