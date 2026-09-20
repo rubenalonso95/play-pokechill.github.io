@@ -53,6 +53,7 @@ function saveGame() {
     if (!data[i]) data[i] = {};
     data[i].caught = pkmn[i].caught;
     data[i].movepool = pkmn[i].movepool;
+    data[i].lockedMoves = pkmn[i].lockedMoves;
     data[i].level = pkmn[i].level;
     data[i].moves = pkmn[i].moves;
     data[i].newmoves = pkmn[i].newmoves;
@@ -138,6 +139,7 @@ function loadGame() {
     if (data[i]) {
       pkmn[i].caught = data[i].caught;
       pkmn[i].movepool = data[i].movepool;
+      pkmn[i].lockedMoves = data[i].lockedMoves;
       pkmn[i].level = data[i].level;
       pkmn[i].moves = data[i].moves;
       pkmn[i].newmoves = data[i].newmoves;
@@ -163,6 +165,11 @@ function loadGame() {
       pkmn[i].nature = data[i].nature;
       pkmn[i].tagList = data[i].tagList;
     }
+  }
+
+  // Move Lock: lockedMoves belongs to the Pokemon; old saves without it fall back to []
+  for (const i in pkmn) {
+    if (!Array.isArray(pkmn[i].lockedMoves)) pkmn[i].lockedMoves = []
   }
 
   // Permanent skills: normalise old saves and always keep the current ability unlocked

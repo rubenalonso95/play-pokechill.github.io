@@ -8898,6 +8898,12 @@ if (mod==="end"){
     if (pkmn[saved.geneticHost].moves.slot3 !== undefined )pkmn[saved.geneticHost].movepool.push(pkmn[saved.geneticHost].moves.slot3)
     if (pkmn[saved.geneticHost].moves.slot4 !== undefined )pkmn[saved.geneticHost].movepool.push(pkmn[saved.geneticHost].moves.slot4)
 
+    //Move Lock: moves locked by the player are kept in the movepool even if they are not equiped right now
+    if (!Array.isArray(pkmn[saved.geneticHost].lockedMoves)) pkmn[saved.geneticHost].lockedMoves = []
+    pkmn[saved.geneticHost].lockedMoves.forEach(moveID => {
+        if (!pkmn[saved.geneticHost].movepool.includes(moveID)) pkmn[saved.geneticHost].movepool.push(moveID)
+    })
+
 
     //pass moves
     
@@ -8915,21 +8921,24 @@ if (mod==="end"){
 
 
     if (itemUsed==`lockCapsule`){
+        //Move Lock: locked moves of the sample are never lost (pool and equiped slots)
+        if (!Array.isArray(samplePkmn.lockedMoves)) samplePkmn.lockedMoves = []
+        const sampleMoveLocked = moveID => samplePkmn.lockedMoves.includes(moveID)
         //transfer moves from sample to host pool
         if (pkmn[saved.geneticSample].moves.slot1 !== undefined && !pkmn[saved.geneticHost].movepool.includes(pkmn[saved.geneticSample].moves.slot1) && move[pkmn[saved.geneticSample].moves.slot1].moveset!==undefined)  pkmn[saved.geneticHost].movepool.push(pkmn[saved.geneticSample].moves.slot1)
         if (pkmn[saved.geneticSample].moves.slot2 !== undefined && !pkmn[saved.geneticHost].movepool.includes(pkmn[saved.geneticSample].moves.slot2) && move[pkmn[saved.geneticSample].moves.slot2].moveset!==undefined)  pkmn[saved.geneticHost].movepool.push(pkmn[saved.geneticSample].moves.slot2)
         if (pkmn[saved.geneticSample].moves.slot3 !== undefined && !pkmn[saved.geneticHost].movepool.includes(pkmn[saved.geneticSample].moves.slot3) && move[pkmn[saved.geneticSample].moves.slot3].moveset!==undefined)  pkmn[saved.geneticHost].movepool.push(pkmn[saved.geneticSample].moves.slot3)
         if (pkmn[saved.geneticSample].moves.slot4 !== undefined && !pkmn[saved.geneticHost].movepool.includes(pkmn[saved.geneticSample].moves.slot4) && move[pkmn[saved.geneticSample].moves.slot4].moveset!==undefined)  pkmn[saved.geneticHost].movepool.push(pkmn[saved.geneticSample].moves.slot4)
         //delete sample pool
-        if (move[pkmn[saved.geneticSample].moves.slot1].moveset!==undefined) pkmn[saved.geneticSample].movepool.splice(pkmn[saved.geneticSample].movepool.indexOf(pkmn[saved.geneticSample].moves.slot1), 1);
-        if (move[pkmn[saved.geneticSample].moves.slot2].moveset!==undefined) pkmn[saved.geneticSample].movepool.splice(pkmn[saved.geneticSample].movepool.indexOf(pkmn[saved.geneticSample].moves.slot2), 1);
-        if (move[pkmn[saved.geneticSample].moves.slot3].moveset!==undefined) pkmn[saved.geneticSample].movepool.splice(pkmn[saved.geneticSample].movepool.indexOf(pkmn[saved.geneticSample].moves.slot3), 1);
-        if (move[pkmn[saved.geneticSample].moves.slot4].moveset!==undefined) pkmn[saved.geneticSample].movepool.splice(pkmn[saved.geneticSample].movepool.indexOf(pkmn[saved.geneticSample].moves.slot4), 1);
+        if (move[pkmn[saved.geneticSample].moves.slot1].moveset!==undefined && !sampleMoveLocked(pkmn[saved.geneticSample].moves.slot1)) pkmn[saved.geneticSample].movepool.splice(pkmn[saved.geneticSample].movepool.indexOf(pkmn[saved.geneticSample].moves.slot1), 1);
+        if (move[pkmn[saved.geneticSample].moves.slot2].moveset!==undefined && !sampleMoveLocked(pkmn[saved.geneticSample].moves.slot2)) pkmn[saved.geneticSample].movepool.splice(pkmn[saved.geneticSample].movepool.indexOf(pkmn[saved.geneticSample].moves.slot2), 1);
+        if (move[pkmn[saved.geneticSample].moves.slot3].moveset!==undefined && !sampleMoveLocked(pkmn[saved.geneticSample].moves.slot3)) pkmn[saved.geneticSample].movepool.splice(pkmn[saved.geneticSample].movepool.indexOf(pkmn[saved.geneticSample].moves.slot3), 1);
+        if (move[pkmn[saved.geneticSample].moves.slot4].moveset!==undefined && !sampleMoveLocked(pkmn[saved.geneticSample].moves.slot4)) pkmn[saved.geneticSample].movepool.splice(pkmn[saved.geneticSample].movepool.indexOf(pkmn[saved.geneticSample].moves.slot4), 1);
         //remove equiped moves from sample
-        if (move[pkmn[saved.geneticSample].moves.slot1].moveset!==undefined) pkmn[saved.geneticSample].moves.slot1 = undefined
-        if (move[pkmn[saved.geneticSample].moves.slot2].moveset!==undefined) pkmn[saved.geneticSample].moves.slot2 = undefined
-        if (move[pkmn[saved.geneticSample].moves.slot3].moveset!==undefined) pkmn[saved.geneticSample].moves.slot3 = undefined
-        if (move[pkmn[saved.geneticSample].moves.slot4].moveset!==undefined) pkmn[saved.geneticSample].moves.slot4 = undefined
+        if (move[pkmn[saved.geneticSample].moves.slot1].moveset!==undefined && !sampleMoveLocked(pkmn[saved.geneticSample].moves.slot1)) pkmn[saved.geneticSample].moves.slot1 = undefined
+        if (move[pkmn[saved.geneticSample].moves.slot2].moveset!==undefined && !sampleMoveLocked(pkmn[saved.geneticSample].moves.slot2)) pkmn[saved.geneticSample].moves.slot2 = undefined
+        if (move[pkmn[saved.geneticSample].moves.slot3].moveset!==undefined && !sampleMoveLocked(pkmn[saved.geneticSample].moves.slot3)) pkmn[saved.geneticSample].moves.slot3 = undefined
+        if (move[pkmn[saved.geneticSample].moves.slot4].moveset!==undefined && !sampleMoveLocked(pkmn[saved.geneticSample].moves.slot4)) pkmn[saved.geneticSample].moves.slot4 = undefined
         //equip moves from pool into empty slots
         for (const e of pkmn[saved.geneticSample].movepool) {
         if (pkmn[saved.geneticSample].moves.slot1 == undefined && pkmn[saved.geneticSample].moves.slot1!= e && pkmn[saved.geneticSample].moves.slot2!= e && pkmn[saved.geneticSample].moves.slot3!= e && pkmn[saved.geneticSample].moves.slot4!= e) pkmn[saved.geneticSample].moves.slot1 = e

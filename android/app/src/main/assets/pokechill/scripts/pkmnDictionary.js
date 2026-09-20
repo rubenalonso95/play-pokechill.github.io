@@ -20190,6 +20190,7 @@ for (const i in pkmn){
      pkmn[i].caught = 0
      pkmn[i].level = 1
      pkmn[i].movepool = []
+     pkmn[i].lockedMoves = []
      pkmn[i].newMoves = []
      pkmn[i].permanentSkills = []
 

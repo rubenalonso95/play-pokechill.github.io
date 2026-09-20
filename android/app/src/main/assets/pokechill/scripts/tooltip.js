@@ -1490,6 +1490,43 @@ frontierArray.sort((a, b) => a.data.tier - b.data.tier);
 
     updateEditorTags()
 
+    //Move Lock: the lock lives in pkmn[...].lockedMoves (per Pokemon, not per slot)
+    const moveLockClosedIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2m-6 9c-1.1 0-2-.9-2-2s.9-2 2-2s2 .9 2 2s-.9 2-2 2m3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1z"/></svg>`
+    const moveLockOpenIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2s-2 .9-2 2s.9 2 2 2m6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2m0 12H6V10h12z"/></svg>`
+
+    function pkmnLockedMoves(id) {
+    if (!Array.isArray(pkmn[id].lockedMoves)) pkmn[id].lockedMoves = []
+    return pkmn[id].lockedMoves
+    }
+
+    //open lock = green (move can be lost), closed lock = red (move is protected)
+    function refreshMoveLock(lock) {
+    const locked = pkmnLockedMoves(ttdata).includes(lock.dataset.move)
+    lock.style.background = locked ? `#e74c3c` : `#2ecc71`
+    lock.title = `Move Lock: ${locked ? "closed, this move cannot be lost" : "open"}`
+    lock.innerHTML = locked ? moveLockClosedIcon : moveLockOpenIcon
+    }
+
+    function createMoveLock(moveId) {
+    const lock = document.createElement("div")
+    lock.className = "pkmn-movebox-lock"
+    lock.dataset.move = moveId
+    lock.style.cssText = "display:flex;align-items:center;justify-content:center;margin:0 0.3rem;padding:0.15rem;border-radius:0.3rem;flex:none;z-index:2;cursor:pointer;color:white;"
+    lock.addEventListener("click", e => {
+    //the lock must not select or swap the move it belongs to
+    e.stopPropagation()
+    const lockedMoves = pkmnLockedMoves(ttdata)
+    const index = lockedMoves.indexOf(moveId)
+    if (index == -1) lockedMoves.push(moveId)
+    else lockedMoves.splice(index, 1)
+    saveGame()
+    //equiped moves and learnt moves share the same list
+    document.querySelectorAll(`.pkmn-movebox-lock[data-move="${moveId}"]`).forEach(el => refreshMoveLock(el))
+    })
+    refreshMoveLock(lock)
+    return lock
+    }
+
 
     function updateMoves() {
     for (const key in pkmn[ttdata].moves) {
@@ -1574,6 +1611,7 @@ frontierArray.sort((a, b) => a.data.tier - b.data.tier);
      `</span></span><strong>(${move[moveId].power} BP, ${format(move[moveId].split)})</strong><img style="background: ${returnTypeColor(move[ moveId ].type)} " src="img/icons/${move[ moveId ].type }.svg">`
 
      divMove.dataset.move = moveId
+     divMove.prepend(createMoveLock(moveId))
 
     document.getElementById(`pkmn-editor-current-moves`).appendChild(divMove)
     }
@@ -1700,6 +1738,7 @@ const sortedMovepool = movepool
      `</span><strong>(${move[moveId].power} BP, ${format(move[moveId].split)})</strong><img style="background: ${returnTypeColor(move[ moveId ].type)} " src="img/icons/${move[ moveId ].type }.svg">`
 
      divMove.dataset.move = moveId
+     divMove.prepend(createMoveLock(moveId))
 
     document.getElementById(`pkmn-editor-movepool`).appendChild(divMove)
     }
