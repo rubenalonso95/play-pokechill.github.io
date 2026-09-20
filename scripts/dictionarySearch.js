@@ -408,8 +408,9 @@ function getAbilityPoolByTier(poke) {
                 : "0%";
 
         abilities.forEach(id => {
+            const unlocked = Array.isArray(poke.permanentSkills) && poke.permanentSkills.includes(id);
             list.push(
-                `<div class="dictionary-overview-data" style="cursor:help" data-ability="${id}"><span>${format(id)}</span><div></div><span>${perAbilityChance}</span></div>`
+                `<div class="dictionary-overview-data" style="cursor:help" data-ability="${id}"><span>${unlocked ? "✓ " : ""}${format(id)}</span><div></div><span>${perAbilityChance}</span></div>`
             );
         });
     });
