@@ -773,6 +773,7 @@ function exitCombat(){
     }
 
     saved.autoRefight = false;
+    saved.pendingAbilityTarget = undefined
     afkSeconds = 0;
     storedAfkSeconds = 0
     if (saved.tutorial && saved.tutorialStep === "battleEnd") {saved.tutorialStep = "none"; openTutorial()}
@@ -5912,6 +5913,7 @@ if (document.getElementById("pokedex-search").value!="") {
 
             div.addEventListener("click", e => { 
 
+                if (saved.trainingPokemon != pkmn[i].id) saved.pendingAbilityTarget = undefined
                 saved.trainingPokemon = pkmn[i].id
 
 
@@ -9292,6 +9294,15 @@ training.ability = {
         const newAbility = learnPkmnAbility(saved.trainingPokemon)
         setPkmnAbility(saved.trainingPokemon, newAbility)
 
+        if (
+            saved.pendingAbilityTarget &&
+            saved.pendingAbilityTarget.pkmn == saved.trainingPokemon &&
+            newAbility == saved.pendingAbilityTarget.abilityId
+        ) {
+            saved.autoRefight = false
+            saved.pendingAbilityTarget = undefined
+        }
+
         setTimeout(() => {
         const div = document.createElement("span");
         div.innerHTML = `${format(saved.trainingPokemon)} now has ${format(newAbility)}!`
@@ -9444,10 +9455,130 @@ function applyNatureChoice(pickedNature) {
     setTrainingMenu()
 }
 
+//--Ability Training target (Phase 2): selectable abilities reuse the same type
+//--compatibility filter as learnPkmnAbility(), without duplicating its probabilities
+function getTrainableAbilityPool(pkmnId) {
+    if (pkmn[pkmnId] == undefined) return []
+    const types = pkmn[pkmnId].type
+    const hiddenId = pkmn[pkmnId].hiddenAbility?.id
+    return Object.keys(ability).filter(a => {
+        const ab = ability[a]
+        if (ab.type == undefined) return false
+        if (a == hiddenId) return false
+        if (a == pkmn[pkmnId].ability) return false
+        return ab.type.includes("all") || ab.type.some(t => types.includes(t))
+    })
+}
+
+function getSelectableAbilityTargets(pkmnId) {
+    if (pkmn[pkmnId] == undefined) return []
+    const unlocked = Array.isArray(pkmn[pkmnId].permanentSkills) ? pkmn[pkmnId].permanentSkills : []
+    return getTrainableAbilityPool(pkmnId).filter(a => !unlocked.includes(a))
+}
+
+function normalisePendingAbilityTarget() {
+    const t = saved.pendingAbilityTarget
+    if (t == undefined) return
+    if (typeof t !== "object" || Array.isArray(t) || typeof t.pkmn !== "string" || typeof t.abilityId !== "string") { saved.pendingAbilityTarget = undefined; return }
+    if (pkmn[t.pkmn] == undefined || ability[t.abilityId] == undefined) { saved.pendingAbilityTarget = undefined; return }
+    if (t.pkmn != saved.trainingPokemon) { saved.pendingAbilityTarget = undefined; return }
+    if (!getTrainableAbilityPool(t.pkmn).includes(t.abilityId)) { saved.pendingAbilityTarget = undefined; return }
+}
+
+function clearPendingAbilityTarget() {
+    if (saved.pendingAbilityTarget == undefined) return
+    saved.pendingAbilityTarget = undefined
+    saveGame()
+}
+
+function startTrainingModule(trainKey, trainDiv) {
+    if (training[trainKey].condition && training[trainKey].condition()!=true) return
+    if (trainKey != "ability") saved.pendingAbilityTarget = undefined
+    areas.training.tier = training[trainKey].tier
+    areas.training.currentTraining = trainKey
+    afkSeconds = 0
+    document.getElementById(`explore-menu`).style.display = `none`
+
+    if (trainDiv) trainDiv.style.pointerEvents = "none"
+
+
+    for ( const slot in team){
+    team[slot].pkmn = undefined
+    team[slot].item = undefined
+    }
+
+    team.slot1.pkmn = pkmn[saved.trainingPokemon]
+
+
+    voidAnimation(`explore-transition`, `exploreTransition 1s 1`)
+    document.getElementById(`explore-transition`).style.display = `flex`
+
+
+    setTimeout(() => {
+        saved.currentArea = areas.training.id
+        saved.lastAreaJoined = areas.training.id
+        document.getElementById("content-explore").style.display = "flex"
+        document.getElementById(`training-menu`).style.display = `none`;
+        initialiseArea()
+    }, 500);
+}
+
+function openAbilityTargetMenu(trainKey, trainDiv) {
+    if (trainKey == undefined) trainKey = "ability"
+    if (saved.trainingPokemon == undefined || pkmn[saved.trainingPokemon] == undefined) return
+    const options = getSelectableAbilityTargets(saved.trainingPokemon)
+    if (options.length == 0) { startTrainingModule(trainKey, trainDiv); return }
+
+    document.getElementById("tooltipTop").style.display = "none"
+    document.getElementById("tooltipTitle").innerHTML = `Select a target ability for ${format(saved.trainingPokemon)}`
+    document.getElementById("tooltipMid").innerHTML = `
+                <div id="ability-target-choicelist"></div>
+                `
+    document.getElementById("tooltipBottom").style.display = "none"
+
+    for (const e of options) {
+        if (ability[e] == undefined) continue
+
+        const abilitydiv = document.createElement(`div`)
+        abilitydiv.className = `remember-move`
+        abilitydiv.style.flexDirection = `column`
+        abilitydiv.style.height = `auto`
+        abilitydiv.style.padding = `0.35rem 0`
+        if (ability[e].rarity == 2) abilitydiv.classList.add("ability-uncommon")
+        if (ability[e].rarity == 3) abilitydiv.classList.add("ability-rare")
+        abilitydiv.innerHTML = `<b style="display:block">${format(e)}</b>`
+        abilitydiv.dataset.ability = e
+        document.getElementById(`ability-target-choicelist`).appendChild(abilitydiv)
+
+        abilitydiv.addEventListener("click", event => {
+            applyAbilityTarget(e, trainKey, trainDiv)
+        })
+    }
+
+    openTooltip()
+}
+
+function applyAbilityTarget(pickedAbility, trainKey, trainDiv) {
+    if (trainKey == undefined) trainKey = "ability"
+    if (saved.trainingPokemon == undefined || pkmn[saved.trainingPokemon] == undefined) return
+    if (ability[pickedAbility] == undefined) return
+    if (!getSelectableAbilityTargets(saved.trainingPokemon).includes(pickedAbility)) return
+
+    saved.pendingAbilityTarget = { pkmn: saved.trainingPokemon, abilityId: pickedAbility }
+
+    closeTooltip()
+    saveGame()
+    saved.autoRefight = true
+
+    if (trainDiv == undefined) trainDiv = document.querySelector('[data-training="ability"]')
+    startTrainingModule(trainKey, trainDiv)
+}
+
 function setTrainingMenu() {
 
     //a pending nature choice (completion interrupted) reopens its selector
     if (saved.pendingNatureChoice != undefined) openNatureChoiceMenu()
+
 
 
 
@@ -9552,34 +9683,8 @@ function setTrainingMenu() {
 
 
 
-        if (training[i].condition && training[i].condition()!=true) return
-        areas.training.tier = training[i].tier
-        areas.training.currentTraining = i
-        afkSeconds = 0
-        document.getElementById(`explore-menu`).style.display = `none`
-
-        div.style.pointerEvents = "none"
-
-
-    for ( const slot in team){
-    team[slot].pkmn = undefined
-    team[slot].item = undefined
-    }
-
-    team.slot1.pkmn = pkmn[saved.trainingPokemon]
-
-        
-    voidAnimation(`explore-transition`, `exploreTransition 1s 1`)
-    document.getElementById(`explore-transition`).style.display = `flex`
-
-
-    setTimeout(() => {
-        saved.currentArea = areas.training.id
-        saved.lastAreaJoined = areas.training.id
-        document.getElementById("content-explore").style.display = "flex"
-        document.getElementById(`training-menu`).style.display = `none`;
-        initialiseArea()
-    }, 500);
+        if (i == "ability") { openAbilityTargetMenu(i, div); return }
+        startTrainingModule(i, div);
 
     })
         

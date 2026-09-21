@@ -95,6 +95,11 @@ function loadGame() {
 
   if (data.saved !== undefined) saved = data.saved;
   if (!saved.movePresets || typeof saved.movePresets !== "object" || Array.isArray(saved.movePresets)) saved.movePresets = {}
+  // Ability Training target (Phase 2): old saves may not have it; invalid shapes are discarded
+  if (saved.pendingAbilityTarget !== undefined) {
+    const t = saved.pendingAbilityTarget
+    if (t == undefined || typeof t !== "object" || Array.isArray(t) || typeof t.pkmn !== "string" || typeof t.abilityId !== "string") saved.pendingAbilityTarget = undefined
+  }
   if (data.team !== undefined) team = data.team;
 
   for (const i in item) {
