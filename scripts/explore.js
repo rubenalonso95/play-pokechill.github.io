@@ -774,6 +774,7 @@ function exitCombat(){
 
     saved.autoRefight = false;
     saved.pendingAbilityTarget = undefined
+    resetAbilityPity()
     afkSeconds = 0;
     storedAfkSeconds = 0
     if (saved.tutorial && saved.tutorialStep === "battleEnd") {saved.tutorialStep = "none"; openTutorial()}
@@ -5913,7 +5914,7 @@ if (document.getElementById("pokedex-search").value!="") {
 
             div.addEventListener("click", e => { 
 
-                if (saved.trainingPokemon != pkmn[i].id) saved.pendingAbilityTarget = undefined
+                if (saved.trainingPokemon != pkmn[i].id) { saved.pendingAbilityTarget = undefined; resetAbilityPity() }
                 saved.trainingPokemon = pkmn[i].id
 
 
@@ -9291,7 +9292,8 @@ training.ability = {
     tier: 1,
     color: `#69df96`,
     effect: function() {
-        const newAbility = learnPkmnAbility(saved.trainingPokemon)
+        const pityTarget = (saved.pendingAbilityTarget && saved.pendingAbilityTarget.pkmn == saved.trainingPokemon) ? saved.pendingAbilityTarget.abilityId : undefined
+        const newAbility = (pityTarget != undefined) ? pickAbilityWithTargetPity(saved.trainingPokemon, pityTarget) : learnPkmnAbility(saved.trainingPokemon)
         setPkmnAbility(saved.trainingPokemon, newAbility)
 
         if (
@@ -9301,6 +9303,9 @@ training.ability = {
         ) {
             saved.autoRefight = false
             saved.pendingAbilityTarget = undefined
+            resetAbilityPity()
+        } else if (pityTarget != undefined) {
+            abilityPityFails++
         }
 
         setTimeout(() => {
@@ -9491,9 +9496,87 @@ function clearPendingAbilityTarget() {
     saveGame()
 }
 
+let abilityPityFails = 0
+let abilityPityKey = undefined
+
+function abilityPityKeyFor(pkmnId, abilityId) {
+    return pkmnId + "|" + abilityId
+}
+
+function resetAbilityPity() {
+    abilityPityFails = 0
+    abilityPityKey = undefined
+}
+
+function syncAbilityPity(pkmnId, targetId) {
+    const key = abilityPityKeyFor(pkmnId, targetId)
+    if (abilityPityKey != key) {
+        abilityPityFails = 0
+        abilityPityKey = key
+    }
+}
+
+function getAbilityPoolByTierForPity(pkmnId, tier) {
+    if (pkmn[pkmnId] == undefined) return []
+    const types = pkmn[pkmnId].type
+    const hiddenId = pkmn[pkmnId].hiddenAbility?.id
+    return Object.keys(ability).filter(a => {
+        const ab = ability[a]
+        if (ab.rarity !== tier) return false
+        if (ab.type == undefined) return false
+        if (a == hiddenId) return false
+        if (a == pkmn[pkmnId].ability) return false
+        return ab.type.includes("all") || ab.type.some(t => types.includes(t))
+    })
+}
+
+function pickAbilityWithTargetPity(pkmnId, targetId) {
+    syncAbilityPity(pkmnId, targetId)
+    const fails = abilityPityFails
+    const pools = [getAbilityPoolByTierForPity(pkmnId, 1), getAbilityPoolByTierForPity(pkmnId, 2), getAbilityPoolByTierForPity(pkmnId, 3)]
+    const tierMassBase = [0.752, 0.188, 0.060]
+    //tiers vacios: su masa se redistribuye proporcionalmente entre los tiers no vacios
+    //(misma probabilidad condicional que el two-stage original dado que el tier elegido tenga pool)
+    let liveMass = 0
+    for (let t = 0; t < 3; t++) if (pools[t].length > 0) liveMass += tierMassBase[t]
+    const entries = []
+    if (liveMass > 0) {
+        for (let t = 0; t < 3; t++) {
+            if (pools[t].length == 0) continue
+            const w = (tierMassBase[t] / liveMass) / pools[t].length
+            for (const a of pools[t]) entries.push({ id: a, base: w })
+        }
+    }
+    if (entries.length == 0) return learnPkmnAbility(pkmnId)
+    if (entries.length == 1) {
+        return entries[0].id
+    }
+    const targetEntry = entries.find(e => e.id == targetId)
+    if (targetEntry == undefined) return learnPkmnAbility(pkmnId)
+    const baseTarget = targetEntry.base
+    if (baseTarget >= 1) {
+        return targetId
+    }
+    const bonus = fails * 0.002
+    let newTarget = baseTarget + bonus
+    if (newTarget >= 1) {
+        return targetId
+    }
+    if (newTarget < 0) newTarget = 0
+    const scale = (1 - newTarget) / (1 - baseTarget)
+    let roll = Math.random()
+    for (const e of entries) {
+        const w = (e.id == targetId) ? newTarget : e.base * scale
+        if (w <= 0) continue
+        roll -= w
+        if (roll < 0) return e.id
+    }
+    return targetId
+}
+
 function startTrainingModule(trainKey, trainDiv) {
     if (training[trainKey].condition && training[trainKey].condition()!=true) return
-    if (trainKey != "ability") saved.pendingAbilityTarget = undefined
+    if (trainKey != "ability") { saved.pendingAbilityTarget = undefined; resetAbilityPity() }
     areas.training.tier = training[trainKey].tier
     areas.training.currentTraining = trainKey
     afkSeconds = 0
@@ -9565,6 +9648,8 @@ function applyAbilityTarget(pickedAbility, trainKey, trainDiv) {
     if (!getSelectableAbilityTargets(saved.trainingPokemon).includes(pickedAbility)) return
 
     saved.pendingAbilityTarget = { pkmn: saved.trainingPokemon, abilityId: pickedAbility }
+    abilityPityFails = 0
+    abilityPityKey = abilityPityKeyFor(saved.trainingPokemon, pickedAbility)
 
     closeTooltip()
     saveGame()
