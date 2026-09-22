@@ -78,6 +78,7 @@ function saveGame() {
     data[i].starsignList = pkmn[i].starsignList;
     data[i].nature = pkmn[i].nature;
     data[i].tagList = pkmn[i].tagList;
+    data[i].favorite = pkmn[i].favorite;
 
   }
 
@@ -169,6 +170,8 @@ function loadGame() {
       pkmn[i].starsignList = data[i].starsignList;
       pkmn[i].nature = data[i].nature;
       pkmn[i].tagList = data[i].tagList;
+      // Favorite: old saves do not have it, anything but true means not favorite
+      pkmn[i].favorite = data[i].favorite == true;
     }
   }
 

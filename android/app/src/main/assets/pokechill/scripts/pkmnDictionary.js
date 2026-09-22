@@ -20193,6 +20193,7 @@ for (const i in pkmn){
      pkmn[i].lockedMoves = []
      pkmn[i].newMoves = []
      pkmn[i].permanentSkills = []
+     pkmn[i].favorite = false
 
     pkmn[i].ivs = {
         hp:0,

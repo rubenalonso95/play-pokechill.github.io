@@ -4978,6 +4978,10 @@ document.getElementById("pokedex-filter-pokerus").addEventListener("change", e =
   updatePokedex()
 });
 
+document.getElementById("pokedex-filter-favorite").addEventListener("change", e => {
+  updatePokedex()
+});
+
 function resetPokedexFilters(){
     tagSystemTagSearch = []
 
@@ -4994,6 +4998,7 @@ function resetPokedexFilters(){
     document.getElementById("pokedex-filter-signature").value = "all";
     document.getElementById("pokedex-filter-ribbon").value = "all";
     document.getElementById("pokedex-filter-pokerus").value = "all";
+    document.getElementById("pokedex-filter-favorite").value = "all";
 }
 
 
@@ -5448,6 +5453,7 @@ function updatePokedex(){
         if (document.getElementById(`pokedex-filter-shiny`).value == "sign" && (pkmn[i].starsignList == undefined || pkmn[i].shiny != true || giveStarsign(i,"check") == "complete") ) continue
         if (document.getElementById(`pokedex-filter-shiny`).value == "signall" && giveStarsign(i,"check") != "complete") continue
         if (document.getElementById(`pokedex-filter-pokerus`).value == "true" && pkmn[i].pokerus != true) continue
+        if (document.getElementById(`pokedex-filter-favorite`).value == "true" && pkmn[i].favorite != true) continue
 
 
         if (tagSystemTagSearch.length > 0) { //tag system
@@ -5605,6 +5611,8 @@ if (document.getElementById("pokedex-search").value!="") {
         if (pkmn[i].pokerus==true) nameMarks += `<strong style="color:${returnTypeColor("poison")}; margin-left:0.2rem; transform:translateY(8%)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14"><path fill="currentColor" fill-rule="evenodd" d="M8.793.365a.75.75 0 0 1 .806.69c.042.55.225 1.33.645 2.429c1.29.492 2.132.657 2.681.656a.75.75 0 0 1 .003 1.5c-.567 0-1.245-.113-2.068-.36c.21.825.274 1.549.199 2.198c-.121 1.045-.592 1.816-1.218 2.442c-.732.731-1.647 1.236-2.933 1.248a.75.75 0 1 1-.015-1.5c.524-.005.937-.126 1.296-.339L4.4 5.539a2.4 2.4 0 0 0-.318.963c-.078.67.055 1.603.6 2.964c.61 1.526.882 2.667.88 3.54a.75.75 0 0 1-1.5-.002c.001-.549-.163-1.392-.656-2.68c-1.059-.405-1.82-.59-2.368-.641a.75.75 0 1 1 .14-1.494a8.4 8.4 0 0 1 1.613.338c-.21-.825-.274-1.548-.199-2.198c.121-1.045.592-1.815 1.218-2.441c.769-.77 1.735-1.281 3.11-1.247a.75.75 0 0 1-.037 1.5c-.586-.015-1.036.108-1.422.338l3.79 3.79a2.4 2.4 0 0 0 .319-.963c.077-.671-.055-1.604-.6-2.964c-.53-1.327-.803-2.356-.866-3.17a.75.75 0 0 1 .69-.807" clip-rule="evenodd"/></svg></strong>`
 
 
+
+        if (pkmn[i].favorite==true) nameMarks += `<strong style="color:${returnTypeColor("fairy")}; margin-left:0.2rem; transform:translateY(8%)">${returnPkmnFavoriteIcon(true, 14)}</strong>`
 
         div.innerHTML = `<span style="display:flex; white-space:nowrap">lvl ${pkmn[i].level} ${nameMarks}</span><img class="sprite-trim" src="img/pkmn/sprite/${i}.png">`
         if (pkmn[i].shiny) div.innerHTML = `<span style="display:flex; white-space:nowrap">lvl ${pkmn[i].level} ${nameMarks}</span> <img class="sprite-trim" src="img/pkmn/shiny/${i}.png">`
@@ -8312,6 +8320,44 @@ function switchShiny(){
         return
     }
 
+}
+
+// Favorite heart icon (Material Design "favorite"). Filled when the Pokemon is a
+// favorite, outlined otherwise. Shared by the editor button and the Pokedex marks.
+const pkmnFavoriteHeart = `M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z`
+
+function returnPkmnFavoriteIcon(favorite, size, attributes = "") {
+    const heart = favorite == true
+        ? `<path fill="currentColor" d="${pkmnFavoriteHeart}"/>`
+        : `<path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="${pkmnFavoriteHeart}"/>`
+
+    return `<svg ${attributes} xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24">${heart}</svg>`
+}
+
+// Heart button of the Pokemon editor, rendered on top of #pkmn-edit-buttons
+function pkmnFavoriteButton() {
+    const favorite = pkmn[currentEditedPkmn]?.favorite == true
+    const color = favorite ? ` style="color:${returnTypeColor("fairy")}"` : ``
+
+    return returnPkmnFavoriteIcon(favorite, 24, `id="pkmn-favorite-switch" onclick="togglePkmnFavorite()"${color}`)
+}
+
+// Refreshes the heart in place so the editor shows the new state without reopening
+function updatePkmnFavoriteButton() {
+    const button = document.getElementById("pkmn-favorite-switch")
+    if (!button) return
+    button.outerHTML = pkmnFavoriteButton()
+}
+
+function togglePkmnFavorite() {
+
+    if (pkmn[currentEditedPkmn].favorite !== true) pkmn[currentEditedPkmn].favorite = true
+    else pkmn[currentEditedPkmn].favorite = false
+
+    updatePkmnFavoriteButton()
+    updatePokedex()
+
+    saveGame()
 }
 
 const starsign = {
