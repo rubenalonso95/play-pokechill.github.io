@@ -95,6 +95,7 @@ function loadGame() {
   const data = JSON.parse(raw);
 
   if (data.saved !== undefined) saved = data.saved;
+  normaliseGenetics()
   if (!saved.movePresets || typeof saved.movePresets !== "object" || Array.isArray(saved.movePresets)) saved.movePresets = {}
   // Ability Training target (Phase 2): old saves may not have it; invalid shapes are discarded
   if (saved.pendingAbilityTarget !== undefined) {

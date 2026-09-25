@@ -4713,7 +4713,27 @@ if (document.getElementById("pokedex-search").value!="") {
         }
 
 
-        if (evoItemToUse != undefined ) {
+        if (evoItemToUse === "maxCore") {
+
+            const gmaxId = `${pkmn[i].id}Gmax`
+
+            if (pkmn[gmaxId] == undefined) continue
+            if ((saved.gigamaxRaidWins?.[gmaxId] ?? 0) < 1) continue
+            if (pkmn[gmaxId].caught != 0) continue
+
+            div.addEventListener("click", e => {
+                inheritPermanentSkills(i, gmaxId); givePkmn(pkmn[gmaxId], 1)
+                if (pkmn[i].shiny === true) pkmn[gmaxId].shiny = true
+                document.getElementById("tooltipTop").style.display = "none"
+                document.getElementById("tooltipMid").style.display = "none"
+                document.getElementById("tooltipBottom").innerHTML = `${format(pkmn[gmaxId].id)} has been unlocked!`
+                openTooltip()
+                updateItemBag()
+
+                exitTmTeaching()
+            })
+
+        } else if (evoItemToUse != undefined ) {
 
             //sketch ahh code but i think it works
 
@@ -4731,6 +4751,8 @@ if (document.getElementById("pokedex-search").value!="") {
 
             if (pkmn[ pkmn[i].evolve()[evo].pkmn.id ].caught!=0)  hidePkmn = true
 
+            if (evoItemToUse === "maxCore" && (saved.gigamaxRaidWins?.[pkmn[i].evolve()[evo].pkmn.id] ?? 0) < 1) hidePkmn = true
+
             let levelToEvolve = wildAreaLevel2
             if (evoItemToUse === "linkStone") levelToEvolve = wildAreaLevel4
             if (evoItemToUse === "oddRock") levelToEvolve = wildAreaLevel4
@@ -4742,7 +4764,7 @@ if (document.getElementById("pokedex-search").value!="") {
             div.addEventListener("click", e => { 
                 inheritPermanentSkills(i, pkmn[i].evolve()[evo].pkmn.id); givePkmn(pkmn[ pkmn[i].evolve()[evo].pkmn.id ],1)
                 if (pkmn[i].shiny === true) pkmn[pkmn[i].evolve()[evo].pkmn.id].shiny = true
-                item[evoItemToUse].got--
+                if (evoItemToUse !== "maxCore") item[evoItemToUse].got--
                 document.getElementById("tooltipTop").style.display = "none"    
                 document.getElementById("tooltipMid").style.display = "none"
                 document.getElementById("tooltipBottom").innerHTML = `${format(pkmn[ pkmn[i].evolve()[evo].pkmn.id ].id)} has been unlocked!`
@@ -4940,12 +4962,12 @@ if (document.getElementById("pokedex-search").value!="") {
 
             if (pkmn[i].level!=100) continue
             if (i == "ditto") continue //gotcha
-            if (pkmn[i].id == saved.geneticSample) continue
+            if (pkmn[i].id == saved.genetics[dexGeneticsSlot]?.sample) continue
 
 
             div.addEventListener("click", e => { 
 
-                saved.geneticHost = pkmn[i].id
+                saved.genetics[dexGeneticsSlot].host = pkmn[i].id
 
 
                 document.getElementById(`pokedex-menu`).style.display = "none"
@@ -4953,7 +4975,7 @@ if (document.getElementById("pokedex-search").value!="") {
                 
 
                 dexHostSelect = undefined
-                setGeneticMenu()
+                setGeneticMenu(dexGeneticsSlot)
             })
 
         }
@@ -4987,12 +5009,12 @@ if (document.getElementById("pokedex-search").value!="") {
 
 
    
-            if (pkmn[i].id == saved.geneticHost) continue
+            if (pkmn[i].id == saved.genetics[dexGeneticsSlot]?.host) continue
 
 
             div.addEventListener("click", e => { 
 
-                saved.geneticSample = pkmn[i].id
+                saved.genetics[dexGeneticsSlot].sample = pkmn[i].id
 
 
                 document.getElementById(`pokedex-menu`).style.display = "none"
@@ -5000,7 +5022,7 @@ if (document.getElementById("pokedex-search").value!="") {
                 
 
                 dexSampleSelect = undefined
-                setGeneticMenu()
+                setGeneticMenu(dexGeneticsSlot)
             })
 
         }
@@ -5496,8 +5518,8 @@ function exitTmTeaching(mod){ //what a fucking disgrace of a code i wrote here
 
 
     if (dexHostSelect==true && mod=="remove"){
-        saved.geneticHost = undefined;
-        setGeneticMenu()
+        saved.genetics[dexGeneticsSlot].host = undefined;
+        setGeneticMenu(dexGeneticsSlot)
     }
 
     if (dexHostSelect==true){
@@ -5516,7 +5538,7 @@ function exitTmTeaching(mod){ //what a fucking disgrace of a code i wrote here
         document.getElementById(`pokedex-menu`).style.zIndex = "30"
         document.getElementById(`pokedex-menu`).style.display = "none"
         dexSampleSelect = undefined
-        setGeneticMenu()
+        setGeneticMenu(dexGeneticsSlot)
     }
 
 
@@ -5703,7 +5725,8 @@ function switchMenu(id){
     if (id==="genetics") {
         document.getElementById(`genetics-menu`).style.display = "flex"
         document.getElementById(`genetics-menu`).style.zIndex = "40"
-        setGeneticMenu()
+        updateGeneticsTabs()
+        setGeneticMenu(activeGeneticsSlot)
     } 
 
     if (id==="settings") {
@@ -5984,7 +6007,7 @@ function updateItemBag(){
         if (item[i].genetics!=true) continue
 
         if (i == item.destinyKnot.id && currentGeneticsCompatibility<=1 ) continue
-        if (i == item.lockCapsule.id && (currentGeneticsCompatibility<=1 || pkmn[saved.geneticSample].movepool.length<5) ) continue
+        if (i == item.lockCapsule.id && (currentGeneticsCompatibility<=1 || pkmn[saved.genetics[geneticItemSlot].sample].movepool.length<5) ) continue
 
 
         div.addEventListener("click", e => { 
@@ -5993,8 +6016,8 @@ function updateItemBag(){
             document.getElementById("item-menu-cancel").style.display = "none"
              item[i].got--
 
-            saved.geneticOperation = undefined;
-            setGeneticMenu("end", i);
+            saved.genetics[geneticItemSlot].operation = undefined;
+            setGeneticMenu(geneticItemSlot, "end", i);
             openTooltip()
             geneticItemSelect = false
         })
@@ -6721,14 +6744,16 @@ setInterval(afkTimer, 1000);*/
 saved.lastFrameRecorded = Date.now();
 
 let afkSeconds = 0;
-let afkSecondsGenetics = 0;
+let afkSecondsGenetics = [0, 0, 0];
 
 function loop() {
     const timeNow = Date.now();
     const elapsed = (timeNow - saved.lastFrameRecorded) / 1000;
     saved.lastFrameRecorded = timeNow;
     
-    afkSecondsGenetics += elapsed;
+    saved.genetics.forEach((slot, i) => {
+        if (slot.operation > 1) afkSecondsGenetics[i] += elapsed;
+    });
 
     if (saved.curry && saved.curry.time>-1){
         saved.curry.time -= elapsed
@@ -7452,9 +7477,12 @@ function returnDivisionLetter(division){
 
 let dexHostSelect = undefined
 let dexSampleSelect = undefined
+let dexGeneticsSlot = undefined
 let geneticItemSelect = false
+let geneticItemSlot = undefined
 let currentGeneticsCompatibility = 0
 let powerCost = 0
+let activeGeneticsSlot = 0
 
 
 

@@ -686,7 +686,12 @@ item.heartScale = {
 item.energyRoot = {
     type: "key",
     usable: true,
-    effect: function() {  if(saved.geneticOperation > 1) {afkSecondsGenetics += 30*60; this.got--; updateItemBag()} else {document.getElementById("tooltipTop").style.display = "none"; document.getElementById("tooltipMid").style.display = "none"; document.getElementById("tooltipBottom").innerHTML = `Can't do that right now`; openTooltip()}  },
+    effect: function() {
+
+        let geneticsSlot = activeGeneticsSlot
+        if (!(saved.genetics[geneticsSlot].operation > 1)) geneticsSlot = saved.genetics.findIndex(slot => slot.operation > 1)
+
+        if (geneticsSlot >= 0) {afkSecondsGenetics[geneticsSlot] += 30*60; this.got--; updateItemBag()} else {document.getElementById("tooltipTop").style.display = "none"; document.getElementById("tooltipMid").style.display = "none"; document.getElementById("tooltipBottom").innerHTML = `Can't do that right now`; openTooltip()}  },
     info: function() {return `Use: Fast-forward genetic operation time by 30 minutes. Must be used while an active operation is ongoing`},
 }
 
@@ -990,12 +995,13 @@ item.carbos = {
     info: function() {return `Use: Increase the Speed IV of a Pokemon by 1`},
 }
 
-
-
-
 item.waterStone = {
     evo: true,
     info: function() {return `Use: Evolve certain kinds of Pokemon (Must be level ${wildAreaLevel2}+)`},
+}
+item.maxCore = {
+    evo: true,
+    info: function() {return `Use: Unlock the Gigamax form of a Pokemon after defeating its Gigamax Raid`},
 }
 item.thunderStone = {
     evo: true,
