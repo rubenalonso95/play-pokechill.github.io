@@ -4352,199 +4352,152 @@ document.getElementById("pokedex-search").addEventListener("keydown", e => {
 let fusePkmn;
 let searchedPkmn = []
 
+//--Pokedex Filter Functions (Fase 1 refactor)
+function filterByType(pkmnData) {
+    const type1 = document.getElementById(`pokedex-filter-type`).value
+    const type2 = document.getElementById(`pokedex-filter-type-2`).value
+    if (type1 !== "all" && !pkmnData.type.includes(type1)) return false
+    if (type2 !== "all" && !pkmnData.type.includes(type2)) return false
+    return true
+}
+
+function filterByLevel(pkmnData) {
+    const level = document.getElementById(`pokedex-filter-level`).value
+    if (level !== "all" && !(pkmnData.level <= level && pkmnData.level >= (level - 19))) return false
+    return true
+}
+
+function filterByAbility(pkmnData) {
+    const abilityFilter = document.getElementById(`pokedex-filter-ability`).value
+    if (abilityFilter !== "all" && abilityFilter != 4 && ability[pkmnData.ability].rarity != abilityFilter) return false
+    if (abilityFilter == "4" && (pkmnData.hiddenAbilityUnlocked == true || pkmnData.hiddenAbility == undefined)) return false
+    return true
+}
+
+function filterByDivision(pkmnData) {
+    const division = document.getElementById(`pokedex-filter-division`).value
+    if (division !== "all" && returnPkmnDivision(pkmnData) != division) return false
+    return true
+}
+
+function filterByRibbon(pkmnData) {
+    const ribbon = document.getElementById(`pokedex-filter-ribbon`).value
+    if (ribbon !== "all" && pkmnData.ribbons == undefined) return false
+    return true
+}
+
+function filterBySignature(pkmnData) {
+    const signature = document.getElementById(`pokedex-filter-signature`).value
+    if (signature == "false" && pkmnData.signature == undefined) return false
+    if (signature == "egg" && pkmnData.eggMove == undefined) return false
+    return true
+}
+
+function filterByShiny(pkmnData) {
+    const shiny = document.getElementById(`pokedex-filter-shiny`).value
+    if (shiny == "true" && pkmnData.shiny != true) return false
+    if (shiny == "false" && pkmnData.shiny == true) return false
+    if (shiny == "sign" && (pkmnData.starsignList == undefined || pkmnData.shiny != true || giveStarsign(pkmnData.id, "check") == "complete")) return false
+    if (shiny == "signall" && giveStarsign(pkmnData.id, "check") != "complete") return false
+    return true
+}
+
+function filterByPokerus(pkmnData) {
+    const pokerus = document.getElementById(`pokedex-filter-pokerus`).value
+    if (pokerus == "true" && pkmnData.pokerus != true) return false
+    return true
+}
+
+function filterByFavorite(pkmnData) {
+    const favorite = document.getElementById(`pokedex-filter-favorite`).value
+    if (favorite == "true" && pkmnData.favorite != true) return false
+    return true
+}
+
+function filterByTagSystem(pkmnData) {
+    if (tagSystemTagSearch.length > 0) {
+        if (!pkmnData.tagList || pkmnData.tagList.length === 0) return false
+        const hasMatchingTag = pkmnData.tagList.some(pkmnTag => 
+            tagSystemTagSearch.some(searchTag => 
+                pkmnTag.name === searchTag.name && pkmnTag.color === searchTag.color
+            )
+        );
+        if (!hasMatchingTag) return false;
+    }
+    return true
+}
+
+function filterByEvolution(pkmnData) {
+    const evolution = document.getElementById(`pokedex-filter-evolution`).value
+    let missingEvolution = false
+    let missingLevelEvolution = false
+    
+    if (pkmnData.evolve !== undefined) {
+        for (const evo in pkmnData.evolve()) {
+            if (pkmnData.evolve()[evo].pkmn.caught == 0) {
+                missingEvolution = true
+                if (pkmnData.evolve()[evo].level !== undefined) missingLevelEvolution = true
+            }
+        }
+    }
+    
+    if (evolution !== "all" && !missingEvolution) return false
+    if (evolution == "level-only" && !missingLevelEvolution) return false
+    return true
+}
+
+function filterByFrontierRestriction(pkmnData) {
+    if (areas[saved.currentAreaBuffer]?.type == "frontier") {
+        const division = returnPkmnDivision(pkmnData)
+        if (rotationFrontierCurrent === 1 && (division != "C" && division != "D")) return false
+        if (rotationFrontierCurrent === 2 && (division != "B" && division != "C" && division != "D")) return false
+        if (rotationFrontierCurrent === 3 && (division != "A" && division != "B" && division != "C" && division != "D")) return false
+    }
+    return true
+}
+
+function passesPokedexFilters(pkmnData) {
+    if (pkmnData.ability == undefined) setPkmnAbility(pkmnData.id, learnPkmnAbility(pkmnData.id))
+    if (!filterByType(pkmnData)) return false
+    if (!filterByLevel(pkmnData)) return false
+    if (!filterByAbility(pkmnData)) return false
+    if (!filterByDivision(pkmnData)) return false
+    if (!filterByRibbon(pkmnData)) return false
+    if (!filterBySignature(pkmnData)) return false
+    if (!filterByShiny(pkmnData)) return false
+    if (!filterByPokerus(pkmnData)) return false
+    if (!filterByFavorite(pkmnData)) return false
+    if (!filterByTagSystem(pkmnData)) return false
+    if (!filterByEvolution(pkmnData)) return false
+    if (pkmnData.caught == 0 && pkmnData.tagObtainedIn == "unobtainable") return false
+    return true
+}
+
+function sortPokemonList(pokemonList, sortCriteria) {
+    if (sortCriteria === "default") return
+    pokemonList.sort((b, a) => {
+        if (sortCriteria === "level")
+            return a.level - b.level
+        if (sortCriteria.endsWith("Total")) {
+            const stat = sortCriteria.replace("Total", "")
+            const aTotal = ((a.bst[stat] * 30) * Math.pow(1.1, a.ivs[stat]))
+            const bTotal = ((b.bst[stat] * 30) * Math.pow(1.1, b.ivs[stat]))
+            return aTotal - bTotal
+        }
+        if (sortCriteria.endsWith("Bst")) {
+            const stat = sortCriteria.replace("Bst", "")
+            return a.bst[stat] - b.bst[stat]
+        }
+        if (sortCriteria.endsWith("Iv")) {
+            const stat = sortCriteria.replace("Iv", "")
+            return a.ivs[stat] - b.ivs[stat]
+        }
+        return 0
+    })
+}
+
 
 //--Bulk Rare Candy (native QoL): single-candy effect extracted verbatim, x1/x10/x25/x50/Max reuse it
-function applySingleRareCandy(pkmnId, applyPokedex = true){
-                pkmn[pkmnId].level++
-                let learntMove = learnPkmnMove(pkmn[pkmnId].id, pkmn[pkmnId].level)
-                if (learntMove != undefined) {
-                if (pkmn[ pkmnId ].level % 7 === 0) pkmn[ pkmnId ].movepool.push(learntMove)
-        //this really should be a function huh
-        if (pkmn[ pkmnId ].evolve && pkmn[pkmnId].evolve()[1].level>0){ // if it evolves by level up
-        if (pkmn[ pkmnId ].level >= pkmn[pkmnId].evolve()[1].level && pkmn[ pkmn[pkmnId].evolve()[1].pkmn.id ].caught===0) {
-        inheritPermanentSkills(pkmnId, pkmn[pkmnId].evolve()[1].pkmn.id); givePkmn(pkmn[ pkmn[pkmnId].evolve()[1].pkmn.id ],1)
-        if (pkmn[pkmnId].shiny === true) pkmn[pkmn[pkmnId].evolve()[1].pkmn.id].shiny = true
-        }
-        }
-                }
-                item.rareCandy.got--
-                if (applyPokedex) updatePokedex()
-                return true
-}
-
-function bulkCandyMaxUse(pkmnId){
-    return Math.min(item.rareCandy.got, 100 - pkmn[pkmnId].level)
-}
-
-function useBulkCandy(pkmnId, amount){
-    let quantity = Math.min(Math.max(1, Math.floor(Number(amount) || 1)), item.rareCandy.got, 100 - pkmn[pkmnId].level)
-    for (let n = 0; n < quantity; n++){
-        if (pkmn[pkmnId].level >= 100) break
-        applySingleRareCandy(pkmnId, false)
-    }
-    updatePokedex()
-    closeTooltip()
-    if (item.rareCandy.got<=0){
-        updateItemBag()
-        exitTmTeaching()
-    }
-}
-
-function openBulkCandyMenu(pkmnId){
-    let maxUse = bulkCandyMaxUse(pkmnId)
-    if (maxUse <= 0) return
-    let options = [1, 10, 25, 50, maxUse].map(a => Math.min(a, maxUse)).filter((a, idx, arr) => a > 0 && arr.indexOf(a) === idx)
-    document.getElementById("tooltipTop").style.display = "none"
-    document.getElementById("tooltipTitle").innerHTML = `Rare Candy`
-    document.getElementById("tooltipMid").innerHTML = `
-                <div><strong>${format(pkmnId)}</strong></div>
-                <div>Level ${pkmn[pkmnId].level} &rarr; ${Math.min(100, pkmn[pkmnId].level + maxUse)} &middot; Rare Candy: x${item.rareCandy.got}</div>
-                `
-    document.getElementById("tooltipBottom").innerHTML = `
-                <div id="remember-movelist"></div>
-                <span id="prevent-tooltip-exit"></span>
-                `
-    for (const amount of options){
-        const label = amount === maxUse ? `Max x${amount}` : `x${amount}`
-        const movediv = document.createElement(`div`)
-        movediv.innerHTML = label
-        movediv.className = `remember-move`
-        movediv.addEventListener("click", event => {
-            useBulkCandy(pkmnId, amount)
-        })
-        document.getElementById(`remember-movelist`).appendChild(movediv)
-    }
-    openTooltip()
-}
-
-
-
-//--Multi Heart Scale (native QoL): native single-move remember extracted verbatim, multi-select reuses it
-function applySingleHeartScale(pkmnId, moveId){
-                pkmn[pkmnId].movepool.push(moveId)
-                item.heartScale.got--
-}
-
-function heartScaleRememberableMoves(pkmnId){
-    let rememberable = []
-
-    if (pkmn[pkmnId].movepoolMemory == undefined) return rememberable
-
-    for (const e of pkmn[pkmnId].movepoolMemory){
-
-        //native filter: only moves that arent known yet, no duplicates
-        if (pkmn[pkmnId].movepool.includes(e)) continue
-        if (rememberable.includes(e)) continue
-
-        rememberable.push(e)
-
-    }
-
-    return rememberable
-}
-
-function useHeartScales(pkmnId, remember){
-    //one heart scale per remembered move, same as the native single use
-    let quantity = Math.min(remember.length, item.heartScale.got)
-
-    for (let n = 0; n < quantity; n++){
-        applySingleHeartScale(pkmnId, remember[n])
-    }
-
-    closeTooltip()
-    updateItemBag()
-    exitTmTeaching()
-}
-
-function openHeartScaleMenu(pkmnId){
-    let rememberable = heartScaleRememberableMoves(pkmnId)
-    let remember = []
-
-    document.getElementById("tooltipTop").style.display = "none"
-    document.getElementById("tooltipTitle").innerHTML = `Select move to remember`
-    document.getElementById("tooltipMid").innerHTML = `
-                <div id="remember-movelist"></div>
-                `
-    document.getElementById("tooltipBottom").style.display = "inline"
-    document.getElementById("tooltipBottom").innerHTML = `
-                <div id="heart-scale-remember" class="remember-move">Select a move</div>
-                `
-
-    if (rememberable.length == 0){
-        document.getElementById("tooltipMid").innerHTML = `
-                No new moves to remember
-                `
-        document.getElementById("tooltipBottom").style.display = "none"
-        openTooltip()
-        return
-    }
-
-    for (const e of rememberable){
-
-        const movediv = document.createElement(`div`)
-        movediv.innerHTML = format(e)
-        movediv.className = `remember-move`
-        movediv.style.borderColor = returnTypeColor(move[e].type)
-        movediv.dataset.move = e
-        document.getElementById(`remember-movelist`).appendChild(movediv)
-
-        //native list item, now it toggles the selection instead of spending a heart scale right away
-        movediv.addEventListener("click", event => {
-
-            if (remember.includes(e)) remember = remember.filter(a => a !== e)
-            else remember.push(e)
-
-            updateHeartScaleMenu(remember)
-
-        })
-
-    }
-
-    document.getElementById("heart-scale-remember").addEventListener("click", event => {
-
-        if (remember.length == 0) return
-        if (remember.length > item.heartScale.got) return
-
-        useHeartScales(pkmnId, remember)
-
-    })
-
-    openTooltip()
-    updateHeartScaleMenu(remember)
-}
-
-function updateHeartScaleMenu(remember){
-    const rememberDiv = document.getElementById("heart-scale-remember")
-
-    document.querySelectorAll("#remember-movelist .remember-move").forEach(div => {
-
-        if (remember.includes(div.dataset.move)){
-            div.style.background = `var(--light2)`
-            div.style.color = `var(--dark1)`
-        } else {
-            div.style.background = ``
-            div.style.color = ``
-        }
-
-    })
-
-    if (remember.length == 0){
-        rememberDiv.innerHTML = `Select a move`
-        rememberDiv.style.opacity = `0.5`
-        return
-    }
-
-    //more moves selected than heart scales owned: nothing gets spent
-    if (remember.length > item.heartScale.got){
-        rememberDiv.innerHTML = `Not enough Heart Scales (${item.heartScale.got} left)`
-        rememberDiv.style.opacity = `0.5`
-        return
-    }
-
-    rememberDiv.innerHTML = `Remember ${remember.length} move${remember.length == 1 ? `` : `s`} (${remember.length} Heart Scale${remember.length == 1 ? `` : `s`})`
-    rememberDiv.style.opacity = ``
-}
-
 
 function updatePokedex(){
 
@@ -4623,72 +4576,13 @@ function updatePokedex(){
     //create an array, used for sorting
     for (const i in pkmn) {
         //filters
-        if (pkmn[i].ability == undefined) setPkmnAbility(i, learnPkmnAbility(pkmn[i].id))
-        if (document.getElementById(`pokedex-filter-type`).value !== "all" && !pkmn[i].type.includes(document.getElementById(`pokedex-filter-type`).value)) continue
-        if (document.getElementById(`pokedex-filter-type-2`).value !== "all" && !pkmn[i].type.includes(document.getElementById(`pokedex-filter-type-2`).value)) continue
-        if (document.getElementById(`pokedex-filter-level`).value !== "all" && !( pkmn[i].level <= (document.getElementById(`pokedex-filter-level`).value) &&  pkmn[i].level >= (document.getElementById(`pokedex-filter-level`).value-19) )    ) continue
-        if (document.getElementById(`pokedex-filter-ability`).value !== "all" && document.getElementById(`pokedex-filter-ability`).value!=4 && ability[pkmn[i].ability].rarity !=  document.getElementById(`pokedex-filter-ability`).value   ) continue
-        if (document.getElementById(`pokedex-filter-ability`).value == "4" && (pkmn[i].hiddenAbilityUnlocked == true ||  pkmn[i].hiddenAbility==undefined) ) continue        
-        
-        
-        if (document.getElementById(`pokedex-filter-division`).value !== "all" && returnPkmnDivision(pkmn[i]) !=  document.getElementById(`pokedex-filter-division`).value   ) continue
-        //if (document.getElementById(`pokedex-filter-tag`).value !== "all" && document.getElementById(`pokedex-filter-tag`).value !== "none" && pkmn[i].tag!==document.getElementById(`pokedex-filter-tag`).value ) continue
-        //if (document.getElementById(`pokedex-filter-tag`).value == "none" && pkmn[i].tag!=undefined ) continue
-        if (document.getElementById(`pokedex-filter-ribbon`).value !== "all" && pkmn[i].ribbons==undefined ) continue
-        //if (document.getElementById(`pokedex-filter-tag`).value !== "hidden" && pkmn[i].tag=="hidden" ) continue
-
-        if (document.getElementById(`pokedex-filter-signature`).value == "false" && pkmn[i].signature==undefined ) continue
-        if (document.getElementById(`pokedex-filter-signature`).value == "egg" && pkmn[i].eggMove==undefined ) continue
-
-        if (document.getElementById(`pokedex-filter-shiny`).value == "true" && pkmn[i].shiny != true) continue
-        if (document.getElementById(`pokedex-filter-shiny`).value == "false" && pkmn[i].shiny == true) continue
-        if (document.getElementById(`pokedex-filter-shiny`).value == "sign" && (pkmn[i].starsignList == undefined || pkmn[i].shiny != true || giveStarsign(i,"check") == "complete") ) continue
-        if (document.getElementById(`pokedex-filter-shiny`).value == "signall" && giveStarsign(i,"check") != "complete") continue
-        if (document.getElementById(`pokedex-filter-pokerus`).value == "true" && pkmn[i].pokerus != true) continue
-        if (document.getElementById(`pokedex-filter-favorite`).value == "true" && pkmn[i].favorite != true) continue
-
-
-        if (tagSystemTagSearch.length > 0) { //tag system
-        if (!pkmn[i].tagList || pkmn[i].tagList.length === 0) continue;
-        
-        const hasMatchingTag = pkmn[i].tagList.some(pkmnTag => 
-            tagSystemTagSearch.some(searchTag => 
-                pkmnTag.name === searchTag.name && pkmnTag.color === searchTag.color
-            )
-        );
-        if (!hasMatchingTag) continue;
-        }
-
-        
-        let missingEvolution = false;
-        let missingLevelEvolution = false;
-        if (pkmn[i].evolve !== undefined) {
-        for (const evo in pkmn[i]?.evolve()) {
-        if ( pkmn[i].evolve()[evo].pkmn.caught==0 ) missingEvolution = true
-        if ( pkmn[i].evolve()[evo].pkmn.caught==0 ) {
-            missingEvolution = true
-            // Check for uncaught level-based evolutions
-            if ( pkmn[i].evolve()[evo].level !== undefined ) missingLevelEvolution = true
-        }
-
-        }
-        } 
- 
-        
-        if (document.getElementById(`pokedex-filter-evolution`).value !== "all" && !missingEvolution  ) continue
-
-        if (document.getElementById(`pokedex-filter-evolution`).value == "level-only" && !missingLevelEvolution  ) continue
-
-
-        if (pkmn[i].caught==0 && pkmn[i].tagObtainedIn == "unobtainable") continue
+        if (!passesPokedexFilters(pkmn[i])) continue
 
         totalPokemon++
 
         if (pkmn[i].caught==0) continue
 
-        if (areas[saved.currentAreaBuffer]?.type=="frontier" && rotationFrontierCurrent===1 && (returnPkmnDivision(pkmn[i])!="C" &&  returnPkmnDivision(pkmn[i])!="D")) continue
-        if (areas[saved.currentAreaBuffer]?.type=="frontier" && rotationFrontierCurrent===2 && (returnPkmnDivision(pkmn[i])!="B" && returnPkmnDivision(pkmn[i])!="C" &&  returnPkmnDivision(pkmn[i])!="D")) continue
-        if (areas[saved.currentAreaBuffer]?.type=="frontier" && rotationFrontierCurrent===3 && (returnPkmnDivision(pkmn[i])!="A" && returnPkmnDivision(pkmn[i])!="B" && returnPkmnDivision(pkmn[i])!="C" &&  returnPkmnDivision(pkmn[i])!="D")) continue
+        if (!filterByFrontierRestriction(pkmn[i])) continue
 
         gotPokemon++
         sortedPokemon.push(pkmn[i])
@@ -4696,27 +4590,7 @@ function updatePokedex(){
 
 
     const sort = document.getElementById("pokedex-sort-filter").value
-if (sort !== "default") {
-    sortedPokemon.sort((b, a) => {
-        if (sort === "level")
-            return a.level - b.level
-        if (sort.endsWith("Total")) {
-            const stat = sort.replace("Total", "")
-            const aTotal = ((a.bst[stat] * 30) * Math.pow(1.1, a.ivs[stat]))
-            const bTotal = ((b.bst[stat] * 30) * Math.pow(1.1, b.ivs[stat]))
-            return aTotal - bTotal
-        }
-        if (sort.endsWith("Bst")) {
-            const stat = sort.replace("Bst", "")
-            return a.bst[stat] - b.bst[stat]
-        }
-        if (sort.endsWith("Iv")) {
-            const stat = sort.replace("Iv", "")
-            return a.ivs[stat] - b.ivs[stat]
-        }
-        return 0
-    })
-}
+    sortPokemonList(sortedPokemon, sort)
 
 
 fusePkmn = new Fuse(sortedPokemon, {
@@ -4735,27 +4609,7 @@ if (document.getElementById("pokedex-search").value!="") {
 
 
  // shitty hack, refilter after search
-    if (sort !== "default") {
-        sortedPokemon.sort((b, a) => {
-            if (sort === "level")
-                return a.level - b.level
-            if (sort.endsWith("Total")) {
-                const stat = sort.replace("Total", "")
-                const aTotal = ((a.bst[stat] * 30) * Math.pow(1.1, a.ivs[stat]))
-                const bTotal = ((b.bst[stat] * 30) * Math.pow(1.1, b.ivs[stat]))
-                return aTotal - bTotal
-            }
-            if (sort.endsWith("Bst")) {
-                const stat = sort.replace("Bst", "")
-                return a.bst[stat] - b.bst[stat]
-            }
-            if (sort.endsWith("Iv")) {
-                const stat = sort.replace("Iv", "")
-                return a.ivs[stat] - b.ivs[stat]
-            }
-            return 0
-        })
-    }
+    sortPokemonList(sortedPokemon, sort)
 
 
 
@@ -6456,7 +6310,6 @@ function createFrontierTrainers(){ //fix by enyxiel
     if (saved.lastFrontierRotation == rotationFrontierCurrent) return
     if (saved.lastFrontierRotation != rotationFrontierCurrent) { saved.lastFrontierRotation = rotationFrontierCurrent }
 
-
     saved.arenaCurrentTrainer = 1
 
 const trainers = [];
@@ -6866,7 +6719,6 @@ setInterval(afkTimer, 1000);*/
 
 
 saved.lastFrameRecorded = Date.now();
-saved.lastExportReset ??= Date.now();
 
 let afkSeconds = 0;
 let afkSecondsGenetics = 0;
@@ -6890,107 +6742,10 @@ function loop() {
     if (elapsed > 0.1) {
         afkSeconds += elapsed;
 
-        /*
-        const elapsedDifference = (timeNow - saved.lastExportReset) / 1000;
-        
-        if (elapsedDifference >= 43200) {
-
-            saved.lastExportReset = timeNow;
-        }*/
-
     }
 
     requestAnimationFrame(loop);
 }
-
-
-
-
-
-
-saved.arenaCard1 = undefined
-saved.arenaCard2 = undefined
-saved.arenaCard3 = undefined
-saved.arenaActiveCard = 1
-saved.arenaCurrentTrainer = 1
-
-
-    function returnFieldHue(id){
-        if (field[id].tier==2) return 100
-        if (field[id].tier==4) return 200
-        if (field[id].tier==3) return 300
-    }
-
-
-function pickArenaCard(number){
-
-
-
-    document.getElementById(`arena-card-1`).className = `arena-card`
-    document.getElementById(`arena-card-2`).className = `arena-card`
-    document.getElementById(`arena-card-3`).className = `arena-card`
-
-    document.getElementById(`arena-card-`+number).classList.add("active-arena-card")
-
-    saved.arenaActiveCard = number
-
-
-
-
-
-
-
-
-
-
-
-
-}
-
-
-
-function createArenaCards() {
-
-
-    let fieldt1 = []
-    let fieldt2 = []
-    let fieldt3 = []
-    let fieldt4 = []
-
-
-    for (const i in field) {
-        if (field[i].chance==undefined || ( field[i].chance && rng(field[i].chance) )) {
-        if (field[i].tier==1) fieldt1.push(i)
-        if (field[i].tier==2) fieldt2.push(i)
-        if (field[i].tier==3) fieldt3.push(i)
-        if (field[i].tier==4) fieldt4.push(i)
-        }
-
-    }
-
-    saved.arenaCard1 = [arrayPick(fieldt2,1)]
-    if (rng(0.5)) saved.arenaCard1 = [arrayPick(fieldt1,1)]
-
-
-    saved.arenaCard2 = [arrayPick(fieldt2,1), arrayPick(fieldt3,1)]
-
-
-    saved.arenaCard3 = [arrayPick(fieldt1,1), arrayPick(fieldt3,1), arrayPick(fieldt4,1)]
-    if (rng(0.5)) saved.arenaCard3 = [...arrayPick(fieldt2,2), arrayPick(fieldt4,1)]
-
-
-
-}
-
-
-
-
-
-
-
-
-
-
 
 saved.weather = undefined
 saved.weatherTimer = 0
@@ -7427,71 +7182,6 @@ function moveBuff(target,buff,mod,turnOverride){
 
 saved.claimedExportReward = false
 
-function claimExportReward(){
-
-
-        if (saved.claimedExportReward) return
-
-
-        if (areas.vsGymLeaderBrock.defeated == false) {
-        document.getElementById("tooltipTop").style.display = `none`
-        document.getElementById("tooltipTitle").style.display = `none`
-        document.getElementById("tooltipBottom").style.display = `none`
-        document.getElementById("tooltipMid").innerHTML = `Defeat Gym Leader Brock in VS mode to unlock`
-        openTooltip()
-        return
-        }
-
-        document.getElementById("tooltipTitle").innerHTML = `Reward Received`
-        document.getElementById("tooltipMid").style.display = `none`
-        
-
-        const rewardArray = [item.hpUp.id, item.protein.id, item.iron.id, item.calcium.id, item.zinc.id, item.carbos.id]
-        const reward = arrayPick(rewardArray)
-
-        const parentDiv = document.createElement("div");
-        parentDiv.id = "reward-items-display"
-        parentDiv.style.display = "flex"
-        parentDiv.style.gap = "1rem"
-        parentDiv.style.width = "100%"
-        parentDiv.style.justifyContent = "center"
-
-        
-        document.getElementById("tooltipBottom").appendChild(parentDiv);
-
-
-        const div = document.createElement("div");
-        div.dataset.item = reward
-        div.innerHTML = `<img style="scale:2; image-rendering: pixelated; cursor:help" src="img/items/${reward}.png">`;
-        document.getElementById("reward-items-display").appendChild(div);
-
-        const divCandy = document.createElement("div");
-        divCandy.dataset.item = item.timeCandy.id
-        divCandy.innerHTML = `<img style="scale:2; image-rendering: pixelated; cursor:help" src="img/items/${item.timeCandy.id}.png">`;
-        document.getElementById("reward-items-display").appendChild(divCandy);
-
-        if (item.magazineSubscription.got > 0) {
-        const divF = document.createElement("div");
-        divF.dataset.item = item.fashionCase.id
-        divF.innerHTML = `<img style="scale:2; image-rendering: pixelated; cursor:help" src="img/items/${item.fashionCase.id}.png">`;
-        document.getElementById("reward-items-display").appendChild(divF);
-        }
-
-        saved.claimedExportReward = true;
-        saveGame()
-        exportData()
-        item[reward].got++
-        item.timeCandy.got++
-        if (item.magazineSubscription.got > 0) item.fashionCase.got++
-        openMenu()
-
-        
-        openTooltip()
-
-        
-
-}
-
 let currentEditedPkmn;
 
 function switchShiny(){
@@ -7768,28 +7458,10 @@ let powerCost = 0
 
 
 
-saved.lastDailyReset = undefined
-
-function resetDailyTimers() {
-
-    if (saved.lastDailyReset!=rotationWildCurrent){
-    saved.lastDailyReset = rotationWildCurrent;
-
-            saved.claimedExportReward = false;
-            saved.wonderTradeClaimed = false;
-
-    }
-
-}
-
-
-
 
 
 
 let dexTrainSelect = undefined
-
-saved.trainingPokemon = undefined
 
 
 
@@ -8033,21 +7705,6 @@ function testAbility(target,id){
     return false
 }
 
-saved.mysteryGiftClaimed = undefined
-saved.wonderTradeClaimed = undefined
-
-const mysteryGift = {
-    effect: function() {  
-        const id = pkmn.kecleon.id
-        if (pkmn[id].caught==0) givePkmn(pkmn[id],1)
-        pkmn[id].shiny = true
-        giveRibbon(pkmn[id],"souvenir")
-      },
-    duration: new Date(2026, 3 - 1, 20),
-    info: `Long Press/Right click the present below to receive a gift Kecleon!<br>It will be shiny and carrying a Souvenir Ribbon`,
-    icon: pkmn.kecleon.id
-}
-
 function numericDivision(letter,mod){
     if (mod=="inverse"){
     if (letter == 0) return "SSS"
@@ -8098,123 +7755,6 @@ function returnDivisionStars(target, stat){
 
 
 }
-
-
-
-function claimWonderTrade(){
-
-
-    if (saved.wonderTradeClaimed) return
-
-
-    if (areas.vsMasterTrainerGeeta.defeated == false) {
-        document.getElementById("tooltipTop").style.display = `none`
-        document.getElementById("tooltipTitle").style.display = `none`
-        document.getElementById("tooltipBottom").style.display = `none`
-        document.getElementById("tooltipMid").innerHTML = `Defeat Master Trainer Geeta in VS mode to unlock`
-        openTooltip()
-        return
-    }
-
-
-    document.getElementById("tooltipTop").style.display = "none"
-    document.getElementById("tooltipTitle").innerHTML = `Wonder Trade`
-    document.getElementById("tooltipMid").innerHTML = `Every 12h you might receive a random pokemon`
-    document.getElementById("tooltipBottom").innerHTML = `
-
-        <div onclick="wonderTrade()" class="custom-challenge-button" style="margin-top:0.5rem">Let's do it!</div>
-    
-    `
-    openTooltip()
-
-}
-
-function wonderTrade(){
-
-    closeTooltip()
-    openMenu()
-
-    document.getElementById("wonder-menu").style.display = "flex"
-
-    let chosenPokemon = `magikarp`
-    let chosenShiny = false
-    let unobtainedPokemon = []
-    let obtainedPokemon = []
-
-    for (const i in pkmn){
-        if (pkmn[i].caught>0) continue
-        if (pkmn[i].tagObtainedIn == "frontier" || pkmn[i].tagObtainedIn == "wild" || pkmn[i].tagObtainedIn == "park") unobtainedPokemon.push(i)
-    }
-
-    if (rng(0.5) && unobtainedPokemon.length>0){ //new pokemon
-        if (rng(0.15)) chosenShiny = true
-
-        chosenPokemon = arrayPick(unobtainedPokemon)
-        givePkmn(pkmn[chosenPokemon],1)
-
-    } else { //not so new
-        if (rng(0.50)) chosenShiny = true
-
-        for (const i in pkmn){
-            if (pkmn[i].caught==0) continue
-            if (pkmn[i].shiny==true) continue
-            if (pkmn[i].hidden==true) continue
-            obtainedPokemon.push(i)
-        }
-
-        chosenPokemon = arrayPick(obtainedPokemon)
-        if (obtainedPokemon.length==0) chosenPokemon = pkmn.magikarp.id
-
-    }
-
-    if (chosenShiny) pkmn[chosenPokemon].shiny = true
-    document.getElementById("wonder-text").innerHTML = `Thanks for the ${format(chosenPokemon)}!`
-    document.getElementById("wonder-pkmn").src = `img/pkmn/sprite/${chosenPokemon}.png`
-    if (chosenShiny) document.getElementById("wonder-pkmn").src = `img/pkmn/shiny/${chosenPokemon}.png`
-
-    document.getElementById("wonder-pkmn").oncontextmenu = null;
-    document.getElementById("wonder-pkmn").oncontextmenu = (e) => {
-    tooltipData('pkmnEditor', chosenPokemon)
-    document.getElementById("wonder-menu").style.display = "none"
-    }
-
-
-    saved.wonderTradeClaimed = true
-
-
-}
-
-
-function claimMysteryGift(){
-
-
-        if (areas.vsGymLeaderBrock.defeated == false) {
-        document.getElementById("tooltipTop").style.display = `none`
-        document.getElementById("tooltipTitle").style.display = `none`
-        document.getElementById("tooltipBottom").style.display = `none`
-        document.getElementById("tooltipMid").innerHTML = `Defeat Gym Leader Brock in VS mode to unlock`
-        openTooltip()
-        return
-        }
-
-    openMenu()
-    document.getElementById("tooltipTop").innerHTML = `<img src="img/pkmn/shiny/${mysteryGift.icon}.png">`
-    document.getElementById("tooltipTitle").innerHTML = `Mystery Gift`
-    document.getElementById("tooltipMid").innerHTML = `${mysteryGift.info}<br>You have until ${mysteryGift.duration.toLocaleString("en-US", {month: "long",day: "numeric"})} to claim`
-    document.getElementById("tooltipBottom").innerHTML = `<span data-pkmn-editor=${mysteryGift.icon} id="mystery-claim-button"><img src="img/items/gift.png" style="scale:4; image-rendering:pixelated; padding: 3rem 0; cursor:help" 
-    style="cursor:pointer; font-size:2rem" id="prevent-tooltip-exit"></span>`
-    openTooltip()
-
-    document.getElementById("mystery-claim-button").addEventListener("contextmenu", (e) => {
-    mysteryGift.effect();
-    saved.mysteryGiftClaimed = true
-    });
-
-}
-
-
-
-
 
 
 setInterval(() => {
@@ -8987,13 +8527,14 @@ window.addEventListener('load', function() {
 
 
     if (saved.shopApricornMemoryRotationWhite == undefined) {
-            saved.lastShopApricornReset = 100
+        saved.lastShopApricornReset = 100
     updateItemShop()
     }
 
+    if (saved.lastCurryRotation == undefined) saved.lastCurryRotation = 100
+
     //this safefail prevents loading into unexistiing areas
     if (!areas[saved.currentArea]) saved.currentArea = undefined
-    if (saved.lastCurryRotation == undefined) saved.lastCurryRotation = 100
 
     if (saved.currentArea !== undefined) {
         document.getElementById("team-preview").innerHTML = ""
@@ -9029,10 +8570,9 @@ window.addEventListener('load', function() {
     openTutorial()
 
     saved.lastExportReset ??= Date.now();
+    
     saved.currentPreviewNumber ??= 1;
     saved.weatherCooldown ??= 0
-
-    saved.wonderTradeClaimed ??= false;
 
     requestAnimationFrame(loop);
 

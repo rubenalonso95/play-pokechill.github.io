@@ -370,3 +370,68 @@ function clearData() {
   localStorage.clear();
   window.location.reload();
 }
+
+function claimExportReward(){
+
+
+        if (saved.claimedExportReward) return
+
+
+        if (areas.vsGymLeaderBrock.defeated == false) {
+        document.getElementById("tooltipTop").style.display = `none`
+        document.getElementById("tooltipTitle").style.display = `none`
+        document.getElementById("tooltipBottom").style.display = `none`
+        document.getElementById("tooltipMid").innerHTML = `Defeat Gym Leader Brock in VS mode to unlock`
+        openTooltip()
+        return
+        }
+
+        document.getElementById("tooltipTitle").innerHTML = `Reward Received`
+        document.getElementById("tooltipMid").style.display = `none`
+
+
+        const rewardArray = [item.hpUp.id, item.protein.id, item.iron.id, item.calcium.id, item.zinc.id, item.carbos.id]
+        const reward = arrayPick(rewardArray)
+
+        const parentDiv = document.createElement("div");
+        parentDiv.id = "reward-items-display"
+        parentDiv.style.display = "flex"
+        parentDiv.style.gap = "1rem"
+        parentDiv.style.width = "100%"
+        parentDiv.style.justifyContent = "center"
+
+
+        document.getElementById("tooltipBottom").appendChild(parentDiv);
+
+
+        const div = document.createElement("div");
+        div.dataset.item = reward
+        div.innerHTML = `<img style="scale:2; image-rendering: pixelated; cursor:help" src="img/items/${reward}.png">`;
+        document.getElementById("reward-items-display").appendChild(div);
+
+        const divCandy = document.createElement("div");
+        divCandy.dataset.item = item.timeCandy.id
+        divCandy.innerHTML = `<img style="scale:2; image-rendering: pixelated; cursor:help" src="img/items/${item.timeCandy.id}.png">`;
+        document.getElementById("reward-items-display").appendChild(divCandy);
+
+        if (item.magazineSubscription.got > 0) {
+        const divF = document.createElement("div");
+        divF.dataset.item = item.fashionCase.id
+        divF.innerHTML = `<img style="scale:2; image-rendering: pixelated; cursor:help" src="img/items/${item.fashionCase.id}.png">`;
+        document.getElementById("reward-items-display").appendChild(divF);
+        }
+
+        saved.claimedExportReward = true;
+        saveGame()
+        exportData()
+        item[reward].got++
+        item.timeCandy.got++
+        if (item.magazineSubscription.got > 0) item.fashionCase.got++
+        openMenu()
+
+
+        openTooltip()
+
+
+
+}

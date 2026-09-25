@@ -1,3 +1,4 @@
+saved.trainingPokemon = undefined
 
     document.getElementById("training-sprite-div").addEventListener("click", e => {
 

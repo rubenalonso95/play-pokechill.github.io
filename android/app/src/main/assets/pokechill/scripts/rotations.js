@@ -9,6 +9,20 @@ let rotationDimensionCurrent = 1;
 
 let dailySeed = 0
 
+saved.lastDailyReset = undefined
+
+function resetDailyTimers() {
+
+    if (saved.lastDailyReset!=rotationWildCurrent){
+    saved.lastDailyReset = rotationWildCurrent;
+
+            saved.claimedExportReward = false;
+            saved.wonderTradeClaimed = false;
+
+    }
+
+}
+
 function rotationBag(bagId, max) {
   const rng = mulberry32((bagId * 0x9e3779b9) ^ (max * 0x85ebca6b))
   const arr = []

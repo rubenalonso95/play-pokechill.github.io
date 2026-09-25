@@ -1050,7 +1050,6 @@ shop.shopgimmighoul = {
     effect: function() {givePkmn(pkmn.gimmighoul,1)}
 }
 
-
 shop.shophydratationMemory = {
     icon: item.hydratationMemory.id,
     price: 20,
