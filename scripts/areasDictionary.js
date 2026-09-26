@@ -355,6 +355,7 @@ skill.gigamaxDemoralisingRoar = {
     }
     gigamaxRoarApply() //Skill 2 aislada: ATK-1/SATK-1 por Pokemon durante 4 turnos (sin moveBuff)
     updateTeamBuffs()
+    showGigamaxDemoralisingRoarVisual()
     }
 }
 
@@ -365,6 +366,7 @@ skill.gigamaxEmpower = {
     moveBuff("player","satkup1","self",9999)
     moveBuff("player","speup1","self",9999)
     updateWildBuffs()
+    showGigamaxEmpowerVisual()
     }
 }
 

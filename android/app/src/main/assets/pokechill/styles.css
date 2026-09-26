@@ -230,18 +230,111 @@ body {
     position: relative;
 }
 
-#explore-wild-sprite-data.gigamax-shield-active::before{
-    content: "";
+#gigamax-effect-layer{
     position: absolute;
-    width: 7rem;
-    height: 7rem;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+}
+
+#gigamax-demoralising-roar{
+    position: absolute;
+    width: 20rem;
+    height: 20rem;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -52%) scale(0.25);
+    border: 4rem solid rgba(255, 120, 70, 0.95);
+    border-radius: 50%;
+    box-shadow:
+        0 0 0.8rem rgba(255, 120, 70, 0.9),
+        0 0 0 0.6rem rgba(255, 120, 70, 0.35),
+        0 0 0 1.2rem rgba(255, 120, 70, 0.18);
+    opacity: 0;
+}
+
+#gigamax-demoralising-roar.active{
+    animation: gigamaxDemoralisingRoar 1s ease-out 1;
+}
+
+#gigamax-empower-aura{
+    position: absolute;
+    width: 0;
+    height: 0;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -52%);
-    border: 0.2rem solid rgba(120, 220, 255, 0.9);
+    opacity: 0;
+}
+
+#gigamax-empower-aura::before{
+    content: "✦";
+    position: absolute;
+    left: -0.8rem;
+    top: -4rem;
+    color: #ffd84d;
+    font-size: 2rem;
+    text-shadow:
+        3.8rem 1rem 0 #ffb52e,
+        5rem 4rem 0 #ffd84d,
+        1rem 6rem 0 #ff9d1a,
+        -3rem 4rem 0 #ffd84d,
+        -3.8rem 1rem 0 #ffb52e,
+        0 2.5rem 0 #ffd84d;
+    white-space: nowrap;
+    transform: rotate(-12deg);
+    filter: drop-shadow(0 0 0.4rem #ff9d1a);
+    animation: gigamaxEmpowerStars 1.2s ease-in-out infinite alternate;
+}
+
+#gigamax-empower-aura::after{
+    content: "✦";
+    position: absolute;
+    left: -0.5rem;
+    top: -3rem;
+    color: #fff0a6;
+    font-size: 1.2rem;
+    text-shadow:
+        2.8rem 0.2rem 0 #ff8a00,
+        4.5rem 2.8rem 0 #ffd84d,
+        3rem 5rem 0 #ffb52e,
+        -2.5rem 4.8rem 0 #ff9d1a,
+        -3.8rem 2rem 0 #ffd84d,
+        -1.8rem -0.8rem 0 #ffb52e;
+    white-space: nowrap;
+    animation: gigamaxEmpowerStars 0.9s ease-in-out infinite alternate-reverse;
+}
+
+#gigamax-empower-aura.active{
+    opacity: 1;
+}
+
+@keyframes gigamaxDemoralisingRoar{
+    0% { transform: translate(-50%, -52%) scale(0.2); opacity: 1; }
+    25% { opacity: 0.95; }
+    100% { transform: translate(-50%, -52%) scale(5.5); opacity: 0; }
+}
+
+@keyframes gigamaxEmpowerStars{
+    from { transform: scale(0.9) rotate(-8deg); opacity: 0.65; }
+    to { transform: scale(1.15) rotate(8deg); opacity: 1; }
+}
+
+#explore-wild-sprite-data.gigamax-shield-active::before{
+    content: "";
+    position: absolute;
+    width: 12rem;
+    height: 12rem;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -52%);
+    border: 0.8rem solid rgba(120, 220, 255, 0.9);
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(120, 220, 255, 0.08) 45%, rgba(120, 220, 255, 0.22) 100%);
-    box-shadow: 0 0 1rem rgba(120, 220, 255, 0.8), inset 0 0 1rem rgba(120, 220, 255, 0.35);
+    background: radial-gradient(circle, rgba(120, 220, 255, 0.05) 45%, rgba(120, 220, 255, 0.18) 100%);
+    box-shadow:
+        0 0 1rem rgba(120, 220, 255, 0.95),
+        0 0 2rem rgba(120, 220, 255, 0.65),
+        inset 0 0 1.5rem rgba(120, 220, 255, 0.45);
     pointer-events: none;
     z-index: 1;
     animation: gigamaxShieldPulse 0.7s ease-in-out infinite alternate;

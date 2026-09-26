@@ -1420,6 +1420,8 @@ function gigamaxRaidReset(){
     if (gigamaxRaidState.shieldTimeout != undefined) clearTimeout(gigamaxRaidState.shieldTimeout)
     gigamaxRaidState = { fireBoost:false, shieldUntil:0, shieldTimeout:undefined, phasesDone:{}, roarActive:false, roarTurns:{} }
     document.getElementById("explore-wild-sprite-data")?.classList.remove("gigamax-shield-active")
+    document.getElementById("gigamax-demoralising-roar")?.classList.remove("active")
+    document.getElementById("gigamax-empower-aura")?.classList.remove("active")
 }
 
 function showGigamaxShieldVisual(){
@@ -1428,6 +1430,18 @@ function showGigamaxShieldVisual(){
 
 function hideGigamaxShieldVisual(){
     document.getElementById("explore-wild-sprite-data")?.classList.remove("gigamax-shield-active")
+}
+
+function showGigamaxDemoralisingRoarVisual(){
+    const effect = document.getElementById("gigamax-demoralising-roar")
+    if (!effect) return
+    effect.classList.remove("active")
+    void effect.offsetWidth
+    effect.classList.add("active")
+}
+
+function showGigamaxEmpowerVisual(){
+    document.getElementById("gigamax-empower-aura")?.classList.add("active")
 }
 
 function gigamaxRaidShieldActive(){
