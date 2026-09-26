@@ -999,10 +999,6 @@ item.waterStone = {
     evo: true,
     info: function() {return `Use: Evolve certain kinds of Pokemon (Must be level ${wildAreaLevel2}+)`},
 }
-item.maxCore = {
-    evo: true,
-    info: function() {return `Use: Unlock the Gigamax form of a Pokemon after defeating its Gigamax Raid`},
-}
 item.thunderStone = {
     evo: true,
     info: function() {return `Use: Evolve certain kinds of Pokemon (Must be level ${wildAreaLevel2}+)`},
@@ -1137,6 +1133,10 @@ item.destinyKnot = {
 
 
 
+item.maxCore = {
+    evo: true,
+    info: function() {return `Use: Unlock the Gigamax form of a Pokemon after defeating its Gigamax Raid`},
+}
 item.abomasite = {
     
     evo: true,

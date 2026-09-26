@@ -635,6 +635,7 @@ function switchMember(member){
     barProgressPlayer = 0
     if (barPlayer) barPlayer.style.width = 0
     exploreActiveMember = member
+    gigamaxRoarEnter(member) //Skill 2 Gigamax: contador de debuff por Pokemon, no se reinicia al cambiar
 
 
 

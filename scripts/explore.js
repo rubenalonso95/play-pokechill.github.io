@@ -468,6 +468,9 @@ for (let i = 0; i < 4; i++) {
 
 
 
+            //Gigamax Raid: contador de victorias + Max Core unico (no-op fuera de una raid gigamax)
+            gigamaxRaidVictory()
+
             if (areas[saved.currentArea].encounterEffect) areas[saved.currentArea].encounterEffect()
 
             if (areas[saved.currentArea].encounter && areas[saved.currentArea].unlockRequirement && !areas[saved.currentArea].unlockRequirement() ) saved.autoRefight = false
@@ -572,6 +575,10 @@ for (let t of thresholds) {
     if (areas[saved.currentArea].difficulty == tier2difficulty) wildPkmnHp = 139300
     if (areas[saved.currentArea].difficulty == tier3difficulty) wildPkmnHp = 398000
     if (areas[saved.currentArea].difficulty == tier4difficulty) wildPkmnHp = 1302000
+
+    //Gigamax Raid: HP explicito del boss (barras x HP por barra), sin tocar el calculo de Tier 1-4
+    const gigamaxRaid = currentGigamaxRaid()
+    if (gigamaxRaid != undefined) wildPkmnHp = gigamaxRaid.bars * gigamaxRaid.hpPerBar
 
     
 
@@ -806,6 +813,8 @@ function exitCombat(){
 
 
 function leaveCombat(){
+
+    gigamaxRaidReset() //limpia escudo y fases del boss al abandonar/finalizar el combate
 
 
     if (areas[saved.currentArea].hpPercentage) {
@@ -1394,6 +1403,121 @@ function rejoinArea(){
 
 let skillEnemyTriggers = {1:false,2:false,3:false,4:false}
 
+//===================== GIGAMAX RAID STATE & HELPERS (Fase 1) =====================
+//Estado runtime de la raid Gigamax activa. TODA mutacion de wildPkmnHp dentro de
+//una raid gigamax debe pasar por wildPkmnTakeDamage() para que el clamp de fases
+//y el escudo funcionen (jugador, burn/poison y cualquier DoT).
+//BEGIN_GIGAMAX_BLOCK
+let gigamaxRaidState = { fireBoost:false, shieldUntil:0, shieldTimeout:undefined, phasesDone:{}, roarActive:false, roarTurns:{} }
+
+function currentGigamaxRaid(){
+    const raidKey = areas[saved.currentArea]?.gigamaxRaid
+    if (raidKey == undefined) return undefined
+    return gigamaxRaids[raidKey]
+}
+
+function gigamaxRaidReset(){
+    if (gigamaxRaidState.shieldTimeout != undefined) clearTimeout(gigamaxRaidState.shieldTimeout)
+    gigamaxRaidState = { fireBoost:false, shieldUntil:0, shieldTimeout:undefined, phasesDone:{}, roarActive:false, roarTurns:{} }
+}
+
+function gigamaxRaidShieldActive(){
+    return gigamaxRaidState.shieldUntil > Date.now()
+}
+
+//escudo de 3s: bloquea el dano que recibe el boss, pero el boss sigue atacando
+function gigamaxRaidShield(){
+    const raid = currentGigamaxRaid()
+    if (raid == undefined) return
+    const speed = typeof SpeedBattles !== "undefined" ? SpeedBattles.factor() : 1
+    const shieldDurationMs = raid.shieldSeconds * 1000 / speed
+    gigamaxRaidState.shieldUntil = Date.now() + shieldDurationMs
+    if (gigamaxRaidState.shieldTimeout != undefined) clearTimeout(gigamaxRaidState.shieldTimeout)
+    gigamaxRaidState.shieldTimeout = setTimeout(() => {
+        gigamaxRaidState.shieldUntil = 0
+        gigamaxRaidState.shieldTimeout = undefined
+    }, shieldDurationMs)
+}
+
+//siguiente umbral de fase que el golpe entrante no puede cruzar (undefined = sin umbral)
+function gigamaxRaidNextThreshold(raid){
+    let threshold
+    for (const phase of raid.phases){
+        if (wildPkmnHp <= phase.hp) continue
+        if (threshold == undefined || phase.hp > threshold) threshold = phase.hp
+    }
+    return threshold
+}
+
+function gigamaxRaidUpdatePhases(raid){
+    for (const phase of raid.phases){
+        if (gigamaxRaidState.phasesDone[phase.id]) continue
+        if (wildPkmnHp > phase.hp) continue
+        gigamaxRaidState.phasesDone[phase.id] = true
+        if (phase.shield) gigamaxRaidShield()
+        if (phase.skill != undefined && skill[phase.skill] != undefined) skill[phase.skill].effect()
+    }
+}
+
+//al re-entrar a mitad de combate, las fases ya superadas se marcan sin ejecutar efectos
+function gigamaxRaidResumePhases(){
+    const raid = currentGigamaxRaid()
+    if (raid == undefined) return
+    for (const phase of raid.phases){
+        if (wildPkmnHp <= phase.hp) gigamaxRaidState.phasesDone[phase.id] = true
+    }
+}
+
+//unica via de mutacion del HP del boss dentro de una raid gigamax
+function wildPkmnTakeDamage(amount){
+    const raid = currentGigamaxRaid()
+    if (raid == undefined) { wildPkmnHp -= amount; return }
+    if (gigamaxRaidShieldActive()) return
+    const threshold = gigamaxRaidNextThreshold(raid)
+    if (threshold != undefined) amount = Math.min(amount, Math.max(0, wildPkmnHp - threshold))
+    wildPkmnHp -= amount
+    if (wildPkmnHp === 0) wildPkmnHp = -1 //matar en exacto debe parar el combate (shouldCombatStop usa <0)
+    gigamaxRaidUpdatePhases(raid)
+}
+
+//contador de victorias + recompensa unica (no-op fuera de una raid gigamax)
+function gigamaxRaidVictory(){
+    const raid = currentGigamaxRaid()
+    if (raid == undefined) return
+    if (saved.gigamaxRaidWins == undefined || typeof saved.gigamaxRaidWins != "object") saved.gigamaxRaidWins = {}
+    saved.gigamaxRaidWins[raid.bossId] = (saved.gigamaxRaidWins[raid.bossId] || 0) + 1
+    if (raid.itemReward != undefined && item[raid.itemReward] != undefined && item[raid.itemReward].got < 1){
+        item[raid.itemReward].got++
+        item[raid.itemReward].newItem++
+    }
+}
+
+//Skill 2 Gigamax (Demoralising Roar): debuff aislado por Pokemon, NO usa moveBuff
+//ni los buffs globales del equipo. Vive solo en el estado runtime de la raid.
+function gigamaxRoarApply(){
+    gigamaxRaidState.roarActive = true
+    for (const slot in team){
+        if (team[slot].pkmn == undefined) continue
+        gigamaxRaidState.roarTurns[slot] = 4 //ATK -1 y SATK -1 durante 4 turnos
+    }
+}
+
+//al entrar a combatir despues de la Skill 2, el Pokemon recibe el debuff con sus turnos
+function gigamaxRoarEnter(slot){
+    if (gigamaxRaidState.roarActive !== true) return
+    if (gigamaxRaidState.roarTurns[slot] != undefined) return //no reinicia contadores existentes
+    gigamaxRaidState.roarTurns[slot] = 4
+    updateTeamBuffs()
+}
+
+//turnos restantes del debuff para ese Pokemon (independiente por Pokemon)
+function gigamaxRoarTurns(slot){
+    const turns = gigamaxRaidState.roarTurns[slot]
+    if (turns == undefined) return 0
+    return turns
+}
+//END_GIGAMAX_BLOCK
+
 function updateWildPkmn(){
 
     if (saved.currentArea === undefined) return
@@ -1443,6 +1567,10 @@ if (areas[saved.currentArea].encounter) {
   if (areas[saved.currentArea].difficulty == tier3difficulty) activeBars = 3;
   if (areas[saved.currentArea].difficulty == tier4difficulty) activeBars = 4;
 }
+
+//Gigamax Raid: las barras salen de su config (3) y no del difficulty
+const gigamaxRaidBars = currentGigamaxRaid()
+if (gigamaxRaidBars != undefined) activeBars = gigamaxRaidBars.bars;
 
 const segment = 100 / activeBars;
 
@@ -2588,6 +2716,7 @@ function exploreCombatPlayer() {
 
             if (team[exploreActiveMember].buffs?.satkdown1 > 0) totalPower /=1.5
             if (team[exploreActiveMember].buffs?.satkdown2 > 0) totalPower /=2
+            if (gigamaxRoarTurns(exploreActiveMember) > 0) totalPower /=1.5 //Skill 2 Gigamax: SATK -1
 
             if (team[exploreActiveMember].buffs?.poisoned > 0 && !testAbility(`active`, ability.guts.id) ) totalPower /=1.5
 
@@ -2612,6 +2741,7 @@ function exploreCombatPlayer() {
 
             if (team[exploreActiveMember].buffs?.atkdown1 > 0) totalPower /=1.5
             if (team[exploreActiveMember].buffs?.atkdown2 > 0) totalPower /=2
+            if (gigamaxRoarTurns(exploreActiveMember) > 0) totalPower /=1.5 //Skill 2 Gigamax: ATK -1
 
             if (team[exploreActiveMember].buffs?.burn > 0 && !testAbility(`active`, ability.guts.id) ) totalPower /=1.5
 
@@ -3037,7 +3167,7 @@ function exploreCombatPlayer() {
 
 
 
-        wildPkmnHp -= totalPower;
+        wildPkmnTakeDamage(totalPower);
 
 
 
@@ -3070,6 +3200,8 @@ function exploreCombatPlayer() {
         for (const i in team[exploreActiveMember].buffs){
             if (team[exploreActiveMember].buffs[i]>0) team[exploreActiveMember].buffs[i] -= 1
         }
+        //Skill 2 Gigamax: sus turnos solo corren para el Pokemon activo (independiente por Pokemon)
+        if (gigamaxRaidState.roarActive == true && gigamaxRoarTurns(exploreActiveMember) > 0) gigamaxRaidState.roarTurns[exploreActiveMember] -= 1
 
 
 
@@ -3087,7 +3219,8 @@ function exploreCombatPlayer() {
         }
 
 
-        saved.weatherTimer--
+        //Gigamax Raid Charizard: el Sol es permanente durante toda la raid (aqui nunca decrece)
+        if (!(saved.weather=="sunny" && areas[saved.currentArea]?.gigamaxRaid == "charizardGmax")) saved.weatherTimer--
         saved.weatherCooldown--
             
 
@@ -3503,8 +3636,8 @@ function returnTypeMultipliers(pkmn) {
 
 
 
-                if (wildBuffs.burn>0 ) {wildPkmnHp -=  wildPkmnHpMax/4 ; updateWildPkmn()}
-                if (wildBuffs.poisoned>0 ) {wildPkmnHp -=  wildPkmnHpMax/4 ; updateWildPkmn()}
+                if (wildBuffs.burn>0 ) {wildPkmnTakeDamage(wildPkmnHpMax/4) ; updateWildPkmn()}
+                if (wildBuffs.poisoned>0 ) {wildPkmnTakeDamage(wildPkmnHpMax/4) ; updateWildPkmn()}
 
 
                 for (const buff in wildBuffs){
@@ -3910,6 +4043,9 @@ function exploreCombatWild() {
 
         if (testAbility(`active`,  ability.wonderGuard.id) && typeMultiplier<=1) totalPower*=0.2
 
+        //Gigamax Skill 1: el boss potencia sus movimientos de Fuego
+        if (gigamaxRaidState.fireBoost && currentGigamaxRaid() != undefined && move[nextMoveWild].type == "fire") totalPower *= 1.05
+
 
 
 
@@ -3940,8 +4076,8 @@ function exploreCombatWild() {
         if (wildBuffs.burn>0 ) team[exploreActiveMember].damageDealt +=  Math.min(wildPkmnHpMax/dotDamage)
         if (wildBuffs.poisoned>0 ) team[exploreActiveMember].damageDealt +=  Math.min(wildPkmnHpMax/dotDamage)
         
-        if (wildBuffs.burn>0 ) {wildPkmnHp -=  wildPkmnHpMax/dotDamage ; updateWildPkmn()}
-        if (wildBuffs.poisoned>0 ) {wildPkmnHp -=  wildPkmnHpMax/dotDamage ; updateWildPkmn()}
+        if (wildBuffs.burn>0 ) {wildPkmnTakeDamage(wildPkmnHpMax/dotDamage); updateWildPkmn()}
+        if (wildBuffs.poisoned>0 ) {wildPkmnTakeDamage(wildPkmnHpMax/dotDamage); updateWildPkmn()}
 
         for (const buff in wildBuffs){
             if ( wildBuffs[buff]>0) wildBuffs[buff]--
@@ -3949,6 +4085,9 @@ function exploreCombatWild() {
 
         if (wildBuffs.freeze==0 && wildBuffs.sleep==0 ){
         if (move[nextMoveWild].hitEffect && nullified == false && ( typeEffectiveness(move[nextMoveWild].type, pkmn[team[exploreActiveMember].pkmn.id].type)!= 0 || totalPower==0 ) ) move[nextMoveWild].hitEffect("player")
+
+        //Gigamax Skill 1: 20% de probabilidad de quemar al activo del jugador
+        if (gigamaxRaidState.fireBoost && currentGigamaxRaid() != undefined && nullified == false && move[nextMoveWild].type == "fire" && rng(0.20)) moveBuff("player","burn")
         }
 
         //can be optimised
@@ -3961,6 +4100,8 @@ function exploreCombatWild() {
 }
 
 function initialiseArea(){
+
+    gigamaxRaidReset() //limpia escudo/fases de raids gigamax anteriores
 
 
     zCrystalTurn = 0
@@ -4064,6 +4205,7 @@ function initialiseArea(){
 
     if (areas[saved.currentArea].hpPercentage) {
         wildPkmnHp = wildPkmnHpMax * (areas[saved.currentArea].hpPercentage / 100)
+        gigamaxRaidResumePhases() //al re-entrar, las fases ya superadas se marcan sin disparar efectos
         updateWildPkmn()
     }
 
@@ -6911,6 +7053,17 @@ function updateTeamBuffs(){
         div.style.filter = `hue-rotate(${formatBuffs(i,"hue")}deg)`
         div.innerHTML = formatBuffs(i);
         if (document.getElementById(`team-member-${slot}-buff-list`)) document.getElementById(`team-member-${slot}-buff-list`).appendChild(div);
+        }
+
+        //Skill 2 Gigamax: muestra el debuff aislado (ATK -1 / SATK -1) del Pokemon
+        if (gigamaxRoarTurns(slot) > 0) {
+            for (const roarBuff of ["atkdown1","satkdown1"]) {
+            const roarDiv = document.createElement("span");
+            roarDiv.className = "buff-tag";
+            roarDiv.style.filter = `hue-rotate(${formatBuffs(roarBuff,"hue")}deg)`
+            roarDiv.innerHTML = formatBuffs(roarBuff);
+            if (document.getElementById(`team-member-${slot}-buff-list`)) document.getElementById(`team-member-${slot}-buff-list`).appendChild(roarDiv);
+            }
         }
     };
 

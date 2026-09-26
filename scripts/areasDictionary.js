@@ -339,6 +339,35 @@ skill.demoralisingRoar = {
 
 
 
+skill.gigamaxBlazingRoar = {
+    info : function() { return `Enables the boss's Fire moves (x1.05 power, 20% chance to burn) for the rest of the raid`},
+    effect : function () { gigamaxRaidState.fireBoost = true }
+}
+
+skill.gigamaxDemoralisingRoar = {
+    info : function() { return `Removes all team buffs and lowers the ATK and Sp. ATK of every team member for 4 turns`},
+    effect : function () {
+    for (const slot in team) {
+    if (team[slot].pkmn == undefined) continue
+    for (const i in team[slot].buffs){
+     team[slot].buffs[i] = 0
+    }
+    }
+    gigamaxRoarApply() //Skill 2 aislada: ATK-1/SATK-1 por Pokemon durante 4 turnos (sin moveBuff)
+    updateTeamBuffs()
+    }
+}
+
+skill.gigamaxEmpower = {
+    info : function() { return `The boss raises its ATK, Sp. Atk and SPE`},
+    effect : function () {
+    moveBuff("player","atkup1","self",9999)
+    moveBuff("player","satkup1","self",9999)
+    moveBuff("player","speup1","self",9999)
+    updateWildBuffs()
+    }
+}
+
 for (const i in skill){
     skill[i].id = i
 }
@@ -6095,6 +6124,50 @@ areas.dimensionMegaRayquaza = {
 
 
 
+
+
+//===================== GIGAMAX RAIDS (Fase 1) =====================
+//Config de raids Gigamax, separada de dimensionRaid*/dimensionBlueprint.
+//Cada raid define su boss, sus barras de HP, sus fases (umbral + escudo + skill)
+//y sus recompensas. El estado runtime vive en explore.js (gigamaxRaidState).
+const gigamaxRaids = {}
+
+gigamaxRaids.charizardGmax = {
+    bossId : pkmn.charizardGmax.id,
+    bars : 3,
+    hpPerBar : 325500, //3 barras = 976500 HP totales
+    shieldSeconds : 2.5,
+    itemReward : item.maxCore.id, //recompensa unica: solo se otorga si no se tiene
+    phases : [
+        { id : 4, hp : 813750, shield : true },                                                //75% - solo escudo
+        { id : 1, hp : 651000, shield : true, skill : skill.gigamaxBlazingRoar.id },      //66.7% - fin de barra 1
+        { id : 5, hp : 488250, shield : true },                                                //50% - solo escudo
+        { id : 2, hp : 325500, shield : true, skill : skill.gigamaxDemoralisingRoar.id }, //33.3% - fin de barra 2
+        { id : 3, hp : 162750, shield : true, skill : skill.gigamaxEmpower.id },          //16.7% - mitad de barra 3
+    ],
+}
+
+areas.gigamaxRaidCharizard = {
+    type: `dimension`,
+    tier: 4,
+    name: `Gigamax Raid: Charizard`,
+    background : `dimension1`,
+    icon: pkmn.charizardGmax,
+    trainer: true,
+    encounter: true,
+    difficulty: tier4difficulty,
+    gigamaxRaid: "charizardGmax",
+    encounterEffect : function() {item.megaCluster.got-=1},
+    unlockDescription : `Requires a <img src="img/items/megaCluster.png"> Mega-Cluster to enter`,
+    unlockRequirement : function() { return item.megaCluster.got>0 },
+    level : 100,
+    team : {
+        slot1 : pkmn.charizardGmax,
+        slot1Moves : [move.flamethrower.id, move.flameBurst.id, move.hurricane.id, move.dragonPulse.id],
+    },
+    reward : [pkmn.charmander],
+    fieldEffect : [field.harshSun.id],
+}
 
 
 function secretFight(area){
