@@ -283,8 +283,7 @@ function tooltipData(category, ttdata){
         document.getElementById("tooltipTitle").style.display = "none";
         document.getElementById("tooltipMid").style.display = "none";
         document.getElementById("tooltipBottom").style.display = "inline";
-        document.getElementById("tooltipBottom").innerHTML = `<div id="area-preview-spawns"><strong>Team Preview</strong></div><div id="preview-field-effects"></div>`;
-
+        document.getElementById("tooltipBottom").innerHTML = `<div id="area-preview-spawns"><strong>Team Preview</strong></div><div id="preview-field-effects"></div><div id="preview-gigamax-skills"></div>`;
 
         const spawns = [];
         if (areas[ttdata].team.slot1) spawns.push(areas[ttdata].team.slot1.id)
@@ -374,6 +373,27 @@ function tooltipData(category, ttdata){
             div.innerHTML = `<span style="filter:hue-rotate(${returnFieldHue(i)}deg)">${format(i)}</span><div>${field[i].info()}</div>`
             document.getElementById("preview-field-effects").appendChild(div)
         }
+        }
+        if (areas[ttdata].gigamaxRaid && gigamaxRaids[areas[ttdata].gigamaxRaid]) {
+            const raid = gigamaxRaids[areas[ttdata].gigamaxRaid]
+            const skillPhases = raid.phases.filter(phase => phase.skill !== undefined)
+            if (skillPhases.length > 0) {
+                document.getElementById("preview-gigamax-skills").innerHTML = `Skills`
+                document.getElementById("preview-gigamax-skills").className = "preview-field-list"
+                for (const phase of skillPhases) {
+                    const div = document.createElement("div")
+                    div.className = `arena-card-info`
+                    div.style.background = "transparent"
+                    div.innerHTML = `<span>${format(phase.skill)}</span><div>${skill[phase.skill].info()}</div>`
+                    document.getElementById("preview-gigamax-skills").appendChild(div)
+                }
+            }
+
+            const shieldDiv = document.createElement("div")
+            shieldDiv.className = `arena-card-info`
+            shieldDiv.style.background = "transparent"
+            shieldDiv.innerHTML = `<span>Giga Shield</span><div>Activates a shield for ${raid.shieldSeconds} seconds when an HP threshold is depleted</div>`
+            document.getElementById("preview-gigamax-skills").appendChild(shieldDiv)
         }
 
 

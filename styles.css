@@ -226,6 +226,53 @@ body {
     padding-bottom: 0rem;
 }
 
+#explore-wild-sprite-data{
+    position: relative;
+}
+
+#explore-wild-sprite-data.gigamax-shield-active::before{
+    content: "";
+    position: absolute;
+    width: 7rem;
+    height: 7rem;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -52%);
+    border: 0.2rem solid rgba(120, 220, 255, 0.9);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(120, 220, 255, 0.08) 45%, rgba(120, 220, 255, 0.22) 100%);
+    box-shadow: 0 0 1rem rgba(120, 220, 255, 0.8), inset 0 0 1rem rgba(120, 220, 255, 0.35);
+    pointer-events: none;
+    z-index: 1;
+    animation: gigamaxShieldPulse 0.7s ease-in-out infinite alternate;
+}
+
+#explore-wild-sprite-data.gigamax-shield-active::after{
+    content: "GIGA SHIELD";
+    position: absolute;
+    left: 50%;
+    top: 0.5rem;
+    transform: translateX(-50%);
+    font-weight: bold;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    color: white;
+    text-shadow: 0 0 0.4rem rgba(120, 220, 255, 0.9);
+    pointer-events: none;
+    z-index: 4;
+    animation: gigamaxShieldText 0.8s ease-out 1;
+}
+
+@keyframes gigamaxShieldPulse{
+    from { scale: 0.94; opacity: 0.7; }
+    to { scale: 1.04; opacity: 1; }
+}
+
+@keyframes gigamaxShieldText{
+    0% { opacity: 0; transform: translate(-50%, -0.4rem); }
+    100% { opacity: 1; transform: translate(-50%, 0); }
+}
+
 
 .explore-sprite img{
     image-rendering: pixelated;

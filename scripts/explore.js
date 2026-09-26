@@ -1419,6 +1419,15 @@ function currentGigamaxRaid(){
 function gigamaxRaidReset(){
     if (gigamaxRaidState.shieldTimeout != undefined) clearTimeout(gigamaxRaidState.shieldTimeout)
     gigamaxRaidState = { fireBoost:false, shieldUntil:0, shieldTimeout:undefined, phasesDone:{}, roarActive:false, roarTurns:{} }
+    document.getElementById("explore-wild-sprite-data")?.classList.remove("gigamax-shield-active")
+}
+
+function showGigamaxShieldVisual(){
+    document.getElementById("explore-wild-sprite-data")?.classList.add("gigamax-shield-active")
+}
+
+function hideGigamaxShieldVisual(){
+    document.getElementById("explore-wild-sprite-data")?.classList.remove("gigamax-shield-active")
 }
 
 function gigamaxRaidShieldActive(){
@@ -1432,10 +1441,12 @@ function gigamaxRaidShield(){
     const speed = typeof SpeedBattles !== "undefined" ? SpeedBattles.factor() : 1
     const shieldDurationMs = raid.shieldSeconds * 1000 / speed
     gigamaxRaidState.shieldUntil = Date.now() + shieldDurationMs
+    showGigamaxShieldVisual()
     if (gigamaxRaidState.shieldTimeout != undefined) clearTimeout(gigamaxRaidState.shieldTimeout)
     gigamaxRaidState.shieldTimeout = setTimeout(() => {
         gigamaxRaidState.shieldUntil = 0
         gigamaxRaidState.shieldTimeout = undefined
+        hideGigamaxShieldVisual()
     }, shieldDurationMs)
 }
 

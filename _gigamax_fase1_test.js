@@ -107,6 +107,7 @@ function domEl(id){
         set innerHTML(v){ this._html = v; if (v === "") this.children = [] },
         get innerHTML(){ return this._html },
         appendChild(c){ this.children.push(c) },
+        classList: { add(){}, remove(){}, contains(){ return false } },
     })
     return domEls.get(id)
 }
