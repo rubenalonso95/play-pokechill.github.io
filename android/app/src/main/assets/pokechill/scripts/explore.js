@@ -477,6 +477,14 @@ for (let i = 0; i < 4; i++) {
             if ( saved.currentArea == areas.training.id && /move|iv1|iv2|iv3/.test(areas.training.currentTraining) && training[areas.training.currentTraining].condition() != true ) saved.autoRefight = false
 
 
+            if (areas[saved.currentArea].hoopaCurryEvent && areas.secretHoopa.curryReward) { //Hoopa defeated: recover the stolen curry
+                saved.curry = {
+                    time : 60*60,
+                    effect : areas.secretHoopa.curryReward,
+                }
+                areas.secretHoopa.curryReward = undefined
+            }
+
             areas[saved.currentArea].defeated = true;
             leaveCombat(); 
             wildPkmnHp = wildPkmnHpMax
@@ -2114,6 +2122,7 @@ function updateTeamPkmn(){
         (team?.slot2?.pkmn?.id === undefined || pkmn[ team.slot2.pkmn?.id ].playerHp <= 0) &&
         (team?.slot1?.pkmn?.id === undefined || pkmn[ team.slot1.pkmn?.id ].playerHp <= 0))
         {
+        if (areas[saved.currentArea].hoopaCurryEvent) areas.secretHoopa.curryReward = undefined
 
          
         leaveCombat();

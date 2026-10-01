@@ -6184,6 +6184,7 @@ function secretFight(area){
     document.getElementById("explore-menu").style.display = "none"
     document.getElementById("settings-menu").style.display = "none"
     document.getElementById("dictionary-menu").style.display = "none"
+    document.getElementById("shop-menu").style.display = "none"
     setWildAreas()
 }
 
@@ -6297,6 +6298,21 @@ areas.secretMew = {
         slot1Moves : [move.psychic.id, move.nastyPlot.id, move.auraSphere.id, move.iceBeam.id],
     },
     reward : [pkmn.mew],
+}
+
+areas.secretHoopa = {
+    background : `night`,
+    trainer: true,
+    encounter: true,
+    unlockRequirement : function() { return true },
+    difficulty: tier4difficulty,
+    level : 100,
+    hoopaCurryEvent: true,
+    team : {
+        slot1 : pkmn.hoopa,
+        slot1Moves : [move.nastyPlot.id, move.psychic.id, move.shadowBall.id, move.focusBlast.id],
+    },
+    reward : [pkmn.hoopa],
 }
 
 

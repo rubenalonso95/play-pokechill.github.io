@@ -2109,6 +2109,8 @@ function updateCurry(){
 
 saved.lastCurryRotation = 100
 
+const hoopaCurryChance = 0.1 //Hoopa appearance chance when cooking a curry. Set to 0.1 for the 10% version.
+
 
 function makeCurry(){
 
@@ -2156,12 +2158,6 @@ function makeCurry(){
         return
     }
 
-    saved.curry = {
-        time : 60*60,
-        effect : curryAbilities,
-    }
-
-
     document.getElementById(`curry-ingredients`).style.animation = `curry-drop 0.8s ease-in-out`
 
     setTimeout(() => {
@@ -2174,14 +2170,26 @@ function makeCurry(){
         document.getElementById(`curry-pot`).style.animation = ``
         document.getElementById("tooltipTop").style.display = `none`
         document.getElementById("tooltipTitle").style.display = `none`
-        document.getElementById("tooltipMid").innerHTML = `During raids: Temporarily gained the next abilities for everyone in your team:`
-        document.getElementById("tooltipBottom").innerHTML = joinWithAnd(curryAbilities)
-        openTooltip()
         item.goldenBottleCap.got -= totalPrice
             document.getElementById("shop-currency-gold").innerHTML = `<img src="img/items/goldenBottleCap.png"> x${item.goldenBottleCap.got}`
         saved.lastCurryRotation = rotationWildCurrent
         curryIngredientList = []
         updateCurry()
+        if (rng(hoopaCurryChance)) { //Hoopa steals the cooked curry
+            areas.secretHoopa.curryReward = curryAbilities
+            document.getElementById("tooltipMid").innerHTML = `Una sombra misteriosa se ha llevado tu comida`
+            document.getElementById("tooltipBottom").style.display = `none`
+            openTooltip()
+            setTimeout(() => secretFight(areas.secretHoopa.id), 1500)
+        } else {
+            saved.curry = {
+                time : 60*60,
+                effect : curryAbilities,
+            }
+            document.getElementById("tooltipMid").innerHTML = `During raids: Temporarily gained the next abilities for everyone in your team:`
+            document.getElementById("tooltipBottom").innerHTML = joinWithAnd(curryAbilities)
+            openTooltip()
+        }
 
 
 
