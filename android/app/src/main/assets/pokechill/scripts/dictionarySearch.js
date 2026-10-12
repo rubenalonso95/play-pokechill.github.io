@@ -86,6 +86,7 @@ function updateDictionary(){
 
 
     document.getElementById("dictionary-list").innerHTML = ""
+    updateDictionaryFilterVisibility()
 
 
 
@@ -161,11 +162,28 @@ function updateDictionary(){
     
 
     
-    for (const i in pkmn){
+    for (const entry of window.pokedexCatalog){
+        const i = entry.id
         if (dictionaryFilter!="pokemon") continue
 
+        // Aplicar filtros visuales (solo para Pokémon)
+        if (!passesDictionaryFilters(entry, i)) continue
 
         const div = document.createElement("div")
+        if (entry.type === "upcoming") {
+            if (!dictionaryItems.includes(entry)) dictionaryItems.push(entry)
+
+            if (document.getElementById("dictionary-search").value!="" && !searchedDictionary.includes(entry)) continue
+
+            div.className = "dictionary-pkmn-entry dictionary-pkmn-upcoming"
+            div.innerHTML = `
+                <div class="dictionary-pkmn-code">${entry.code}</div>
+                <div class="dictionary-pkmn-name">${format(i)}</div>
+                <div class="dictionary-pkmn-status">${entry.status}</div>
+            `
+            document.getElementById("dictionary-list").appendChild(div)
+            continue
+        }
         if (pkmn[i].hidden && pkmn[i].caught==0) continue
 
         let icon = `<svg style="opacity:0.3" fill="currentColor" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1126 1126"><defs><style>.cls-1,.cls-2{fill:none;}.cls-2{stroke:currentcolor;stroke-linecap:round;stroke-linejoin:round;stroke-width:100px;}</style></defs><path fill="currentColor" class="cls-1" d="M646.27,1091.94c48.25,3.71,96,.07,142.34-13.67,136.22-40.33,229.87-127.25,281-259.63,12.92-33.47,19.88-68.48,23.33-104.17.33-3.46.83-6.17-4.62-6.16q-98,.3-196,0c-3.42,0-4.7,1.17-5.18,4.31-.71,4.59-1.53,9.17-2.63,13.68-27.08,111-135,180.24-247.43,158.68q-3-.57-5.9-1.23L474.51,1040.42C526.88,1070.09,584.27,1087.18,646.27,1091.94Z" transform="translate(-109.65 -105.51)"/><path fill="currentColor" class="cls-1" d="M678,530.53c-80.91,0-147,66-146.91,146.59h0c0,52.23,27.78,98.34,69.26,124.36L802.4,599.39A147.31,147.31,0,0,0,678,530.53Z" transform="translate(-109.65 -105.51)"/><path class="cls-1" d="M468.93,713.13c-.58-3.44-1.83-4.87-5.73-4.85-32.53.24-65,.16-97.52.16h-96c-7.34,0-7.35,0-6.51,7.5a454.8,454.8,0,0,0,7.62,48.7q30.69,138.51,137.28,229.09L553.24,848.55A211.37,211.37,0,0,1,468.93,713.13Z" transform="translate(-109.65 -105.51)"/><path class="cls-1" d="M824.25,690.68,691.74,823.19C761.64,816.6,817.73,760.54,824.25,690.68Z" transform="translate(-109.65 -105.51)"/><path d="M270.79,764.64a454.8,454.8,0,0,1-7.62-48.7c-.84-7.5-.83-7.5,6.51-7.5h96c32.49,0,65,.08,97.52-.16,3.9,0,5.15,1.41,5.73,4.85a211.37,211.37,0,0,0,84.31,135.42l47.07-47.07c-41.48-26-69.24-72.13-69.26-124.36h0c0-80.62,66-146.63,146.91-146.59A147.31,147.31,0,0,1,802.4,599.39L1047,354.81Q961.93,256.53,828.6,211.49c-35.72-12.07-72.59-18.83-110.19-22a480.64,480.64,0,0,0-103.69,2.35c-83,11-158.7,40.81-226.1,90.55Q253.71,382,206.71,542.94a460.76,460.76,0,0,0-17.86,106.37c-.2,2-.5,3.93-.89,5.86v43c1.7,6.66,1.21,13.52,1.76,20.28,3.47,42.11,11.73,83.28,26.63,122.76q47.33,125.31,139.23,205l52.49-52.48Q301.48,903.15,270.79,764.64Z" transform="translate(-109.65 -105.51)"/><path d="M691.74,823.19l-60.56,60.56q2.93.66,5.9,1.23C749.51,906.54,857.43,837.3,884.51,726.3c1.1-4.51,1.92-9.09,2.63-13.68.48-3.14,1.76-4.31,5.18-4.31q98,.3,196,0c5.45,0,5,2.7,4.62,6.16-3.45,35.69-10.41,70.7-23.33,104.17-51.13,132.38-144.78,219.3-281,259.63-46.34,13.74-94.09,17.38-142.34,13.67-62-4.76-119.39-21.85-171.76-51.52l-53.35,53.35a546.1,546.1,0,0,0,106.31,49c41,14,83.37,21.17,126.64,23.08,1.64.08,3.36-.18,4.85.82h38c7-1.8,14.21-1.18,21.31-1.78q149.68-12.5,266.38-106.38,121.33-98,164.66-247.69a464.67,464.67,0,0,0,17.81-106.33c.1-2.11.58-4.21.88-6.31v-42c-1.7-6.82-1.22-13.85-1.8-20.77-4.43-53.08-16.73-104.29-38.6-152.8a559.5,559.5,0,0,0-32.91-62.39L824.25,690.68C817.73,760.54,761.64,816.6,691.74,823.19Z" transform="translate(-109.65 -105.51)"/><line class="cls-2" x1="50" y1="1076" x2="1076" y2="50"/></svg>`
@@ -179,7 +197,13 @@ function updateDictionary(){
 
         if (document.getElementById("dictionary-search").value!="" && !searchedDictionary.includes(pkmn[i])) continue
 
-        div.innerHTML = ` ${icon} ${format(i)} `
+        const variantClass = entry.type === "variant" ? "dictionary-pkmn-variant" : "dictionary-pkmn-classic"
+        div.className = `dictionary-pkmn-entry ${variantClass}`
+        div.innerHTML = `
+            <div class="dictionary-pkmn-icon">${icon}</div>
+            <div class="dictionary-pkmn-code">${entry.code}</div>
+            <div class="dictionary-pkmn-name">${format(i)}</div>
+        `
 
         document.getElementById("dictionary-list").appendChild(div)
     }
@@ -190,6 +214,7 @@ fuseDictionary = new Fuse(dictionaryItems, {
   keys: [ 
     { name: 'name', getFn: obj => obj.id }, 
     'type', 
+    'status',
     'hiddenAbility.id', 
     'split', 
     'tagObtainedIn', 
@@ -205,6 +230,141 @@ fuseDictionary = new Fuse(dictionaryItems, {
   minMatchCharLength: 1
 })
 }
+
+
+const dictionaryLegendaryNumbers = [144,145,146,150,243,244,245,249,250,377,378,379,380,381,382,383,384,480,481,482,483,484,485,486,487,488,638,639,640,641,642,643,644,645,646,716,717,718,772,773,785,786,787,788,789,790,791,792,800,888,889,890,891,892,894,895,896,897,898,905,1001,1002,1003,1004,1007,1008,1014,1015,1016,1017,1024]
+
+const dictionarySingularNumbers = [151,251,385,386,489,490,491,492,493,494,647,648,649,719,720,721,801,802,807,808,809,893,1025]
+
+function passesDictionaryFilters(entry, pkmnId) {
+    const caught = document.getElementById("dict-filter-caught").value
+    if (caught !== "all") {
+        if (!pkmn[pkmnId] || pkmn[pkmnId].caught === undefined || pkmn[pkmnId].caught === null) return false
+        if (caught === "true" && !(pkmn[pkmnId].caught > 0)) return false
+        if (caught === "false" && pkmn[pkmnId].caught > 0) return false
+    }
+
+    const shiny = document.getElementById("dict-filter-shiny").value
+    if (shiny !== "all") {
+        if (!pkmn[pkmnId] || pkmn[pkmnId].shiny === undefined || pkmn[pkmnId].shiny === null) return false
+        if (shiny === "true" && !pkmn[pkmnId].shiny) return false
+        if (shiny === "false" && pkmn[pkmnId].shiny) return false
+    }
+
+    const obtainable = document.getElementById("dict-filter-obtainable").value
+    if (obtainable !== "all") {
+        if (!pkmn[pkmnId] || pkmn[pkmnId].tagObtainedIn === undefined || pkmn[pkmnId].tagObtainedIn === null) return false
+        if (obtainable === "true" && pkmn[pkmnId].tagObtainedIn === "unobtainable") return false
+        if (obtainable === "false" && pkmn[pkmnId].tagObtainedIn !== "unobtainable") return false
+    }
+
+    const obtained = document.getElementById("dict-filter-obtained").value
+    if (obtained !== "all" && (!pkmn[pkmnId] || pkmn[pkmnId].tagObtainedIn !== obtained)) return false
+
+    const generation = document.getElementById("dict-filter-generation").value
+    if (generation !== "all") {
+        const baseEntry = entry.variantOf
+            ? window.pokedexCatalog.find(e => e.id === entry.variantOf)
+            : entry
+
+        if (!baseEntry || !Number.isInteger(baseEntry.number) || baseEntry.number < 1) return false
+
+        const number = baseEntry.number
+        if (generation === "1" && (number < 1 || number > 151)) return false
+        if (generation === "2" && (number < 152 || number > 251)) return false
+        if (generation === "3" && (number < 252 || number > 386)) return false
+        if (generation === "4" && (number < 387 || number > 493)) return false
+        if (generation === "5" && (number < 494 || number > 649)) return false
+        if (generation === "6" && (number < 650 || number > 721)) return false
+        if (generation === "7" && (number < 722 || number > 809)) return false
+        if (generation === "8" && (number < 810 || number > 905)) return false
+        if (generation === "9" && (number < 906 || number > 1025)) return false
+    }
+
+    const rarity = document.getElementById("dict-filter-rarity").value
+    if (rarity !== "all") {
+        const baseEntry = entry.variantOf
+            ? window.pokedexCatalog.find(e => e.id === entry.variantOf)
+            : entry
+
+        if (!baseEntry) return false
+
+        const number = baseEntry.number
+        if (!Number.isInteger(number) || number < 1) {
+            if (baseEntry.type !== "special" || rarity !== "normal") return false
+        } else {
+            if (rarity === "legendary" && !dictionaryLegendaryNumbers.includes(number)) return false
+            if (rarity === "singular" && !dictionarySingularNumbers.includes(number)) return false
+            if (rarity === "normal" && (
+                dictionaryLegendaryNumbers.includes(number) ||
+                dictionarySingularNumbers.includes(number)
+            )) return false
+        }
+    }
+
+    const division = document.getElementById("dict-filter-division").value
+    if (division !== "all") {
+        if (!pkmn[pkmnId] || !pkmn[pkmnId].bst) return false
+        const pkmnDivision = returnPkmnDivision(pkmn[pkmnId])
+        if (pkmnDivision !== division) return false
+    }
+
+    const type = document.getElementById("dict-filter-type").value
+    if (type !== "all") {
+        if (!pkmn[pkmnId] || !Array.isArray(pkmn[pkmnId].type)) return false
+        if (!pkmn[pkmnId].type.includes(type)) return false
+    }
+
+    return true
+}
+
+function resetDictionaryFilters() {
+    document.getElementById("dict-filter-caught").value = "all"
+    document.getElementById("dict-filter-shiny").value = "all"
+    document.getElementById("dict-filter-obtainable").value = "all"
+    document.getElementById("dict-filter-obtained").value = "all"
+    document.getElementById("dict-filter-generation").value = "all"
+    document.getElementById("dict-filter-rarity").value = "all"
+    document.getElementById("dict-filter-division").value = "all"
+    document.getElementById("dict-filter-type").value = "all"
+    updateDictionary()
+}
+
+function populateDictionaryTypeFilter() {
+    const typeSelect = document.getElementById("dict-filter-type")
+    if (typeSelect.options.length > 1) return // Ya inicializado
+    const allTypes = new Set()
+    for (const id in pkmn) {
+        if (pkmn[id].type) {
+            pkmn[id].type.forEach(t => allTypes.add(t))
+        }
+    }
+    const sortedTypes = Array.from(allTypes).sort()
+    sortedTypes.forEach(type => {
+        const option = document.createElement("option")
+        option.value = type
+        option.textContent = type.charAt(0).toUpperCase() + type.slice(1)
+        typeSelect.appendChild(option)
+    })
+}
+
+// Mostrar filtros solo en pestaña Pokémon
+function updateDictionaryFilterVisibility() {
+    const filtersDiv = document.getElementById("dictionary-pokemon-filters")
+    if (dictionaryFilter === "pokemon") {
+        filtersDiv.style.display = "flex"
+        populateDictionaryTypeFilter()
+    } else {
+        filtersDiv.style.display = "none"
+    }
+}
+
+// Event listeners para filtros
+["dict-filter-caught", "dict-filter-shiny", "dict-filter-obtainable", "dict-filter-obtained", "dict-filter-generation", "dict-filter-rarity", "dict-filter-division", "dict-filter-type"].forEach(id => {
+    document.getElementById(id).addEventListener("change", updateDictionary)
+})
+
+updateDictionaryFilterVisibility()
 
 
 document.addEventListener("click", e => {

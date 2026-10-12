@@ -4350,6 +4350,12 @@ document.getElementById("pokedex-filter-favorite").addEventListener("change", e 
   updatePokedex()
 });
 
+document.getElementById("pokedex-filter-caught").addEventListener("change", e => { updatePokedex() });
+document.getElementById("pokedex-filter-form").addEventListener("change", e => { updatePokedex() });
+document.getElementById("pokedex-filter-obtained").addEventListener("change", e => { updatePokedex() });
+document.getElementById("pokedex-filter-generation").addEventListener("change", e => { updatePokedex() });
+document.getElementById("pokedex-filter-rarity").addEventListener("change", e => { updatePokedex() });
+
 function resetPokedexFilters(){
     tagSystemTagSearch = []
 
@@ -4367,6 +4373,11 @@ function resetPokedexFilters(){
     document.getElementById("pokedex-filter-ribbon").value = "all";
     document.getElementById("pokedex-filter-pokerus").value = "all";
     document.getElementById("pokedex-filter-favorite").value = "all";
+    document.getElementById("pokedex-filter-caught").value = "all";
+    document.getElementById("pokedex-filter-form").value = "all";
+    document.getElementById("pokedex-filter-obtained").value = "all";
+    document.getElementById("pokedex-filter-generation").value = "all";
+    document.getElementById("pokedex-filter-rarity").value = "all";
 }
 
 
@@ -4590,6 +4601,67 @@ function filterByFavorite(pkmnData) {
     return true
 }
 
+function filterByCaught(pkmnData) {
+    const caught = document.getElementById(`pokedex-filter-caught`).value
+    if (caught == "true" && pkmnData.caught == 0) return false
+    if (caught == "false" && pkmnData.caught > 0) return false
+    return true
+}
+
+function filterByForm(pkmnData) {
+    const form = document.getElementById(`pokedex-filter-form`).value
+    if (form == "all") return true
+    const catalogEntry = window.pokedexCatalog.find(e => e.id === pkmnData.id)
+    if (!catalogEntry) return true
+    if (form == "classic" && catalogEntry.type !== "classic") return false
+    if (form == "variant" && catalogEntry.type !== "variant") return false
+    return true
+}
+
+function filterByObtainedIn(pkmnData) {
+    const obtained = document.getElementById(`pokedex-filter-obtained`).value
+    if (obtained == "all") return true
+    if (obtained !== pkmnData.tagObtainedIn) return false
+    return true
+}
+
+function filterByGeneration(pkmnData) {
+    const generation = document.getElementById(`pokedex-filter-generation`).value
+    if (generation == "all") return true
+    const catalogEntry = window.pokedexCatalog.find(e => e.id === pkmnData.id)
+    if (!catalogEntry) return true
+    const baseEntry = catalogEntry.variantOf ? window.pokedexCatalog.find(e => e.id === catalogEntry.variantOf) : catalogEntry
+    if (!baseEntry) return true
+    const number = baseEntry.number
+    if (generation == "1" && (number < 1 || number > 151)) return false
+    if (generation == "2" && (number < 152 || number > 251)) return false
+    if (generation == "3" && (number < 252 || number > 386)) return false
+    if (generation == "4" && (number < 387 || number > 493)) return false
+    if (generation == "5" && (number < 494 || number > 649)) return false
+    if (generation == "6" && (number < 650 || number > 721)) return false
+    if (generation == "7" && (number < 722 || number > 809)) return false
+    if (generation == "8" && (number < 810 || number > 905)) return false
+    if (generation == "9" && (number < 906 || number > 1025)) return false
+    return true
+}
+
+const legendaryNumbers = [144,145,146,150,243,244,245,249,250,377,378,379,380,381,382,383,384,480,481,482,483,484,485,486,487,488,638,639,640,641,642,643,644,645,646,716,717,718,772,773,785,786,787,788,789,790,791,792,800,888,889,890,891,892,894,895,896,897,898,905,1001,1002,1003,1004,1007,1008,1014,1015,1016,1017,1024]
+
+const singularNumbers = [151,251,385,386,489,490,491,492,493,494,647,648,649,719,720,721,801,802,807,808,809,893,1025]
+
+function filterByRarity(pkmnData) {
+    const rarity = document.getElementById(`pokedex-filter-rarity`).value
+    if (rarity == "all") return true
+    const catalogEntry = window.pokedexCatalog.find(e => e.id === pkmnData.id)
+    if (!catalogEntry) return true
+    const baseEntry = catalogEntry.variantOf ? window.pokedexCatalog.find(e => e.id === catalogEntry.variantOf) : catalogEntry
+    if (!baseEntry) return true
+    if (rarity == "legendary" && !legendaryNumbers.includes(baseEntry.number)) return false
+    if (rarity == "singular" && !singularNumbers.includes(baseEntry.number)) return false
+    if (rarity == "normal" && (legendaryNumbers.includes(baseEntry.number) || singularNumbers.includes(baseEntry.number))) return false
+    return true
+}
+
 function filterByTagSystem(pkmnData) {
     if (tagSystemTagSearch.length > 0) {
         if (!pkmnData.tagList || pkmnData.tagList.length === 0) return false
@@ -4645,6 +4717,11 @@ function passesPokedexFilters(pkmnData) {
     if (!filterByFavorite(pkmnData)) return false
     if (!filterByTagSystem(pkmnData)) return false
     if (!filterByEvolution(pkmnData)) return false
+    if (!filterByCaught(pkmnData)) return false
+    if (!filterByForm(pkmnData)) return false
+    if (!filterByObtainedIn(pkmnData)) return false
+    if (!filterByGeneration(pkmnData)) return false
+    if (!filterByRarity(pkmnData)) return false
     if (pkmnData.caught == 0 && pkmnData.tagObtainedIn == "unobtainable") return false
     return true
 }
@@ -8811,8 +8888,17 @@ window.addEventListener('load', function() {
 });
 
 
-
-
+function togglePokedexFilters() {
+    const content = document.getElementById("pokedex-filters-content");
+    const arrow = document.getElementById("pokedex-filters-arrow");
+    if (content.style.display === "none") {
+        content.style.display = "flex";
+        arrow.textContent = "▼";
+    } else {
+        content.style.display = "none";
+        arrow.textContent = "▶";
+    }
+}
 
 
 

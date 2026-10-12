@@ -261,6 +261,64 @@
             <div onclick='dictionaryFilter="item"; document.getElementById("dictionary-search").value=""; searchedDictionary = [] ;  updateDictionary() '>Items</div>
         </div>
 
+        <div id="dictionary-pokemon-filters" style="display: none; flex-wrap: wrap; gap: 0.3rem; padding: 0.5rem 0;">
+            <select id="dict-filter-caught" style="background: var(--dark1); color: var(--light2); border: none; padding: 0.3rem; border-radius: 0.2rem;">
+                <option value="all">Caught</option>
+                <option value="true">Caught</option>
+                <option value="false">Not caught</option>
+            </select>
+            <select id="dict-filter-shiny" style="background: var(--dark1); color: var(--light2); border: none; padding: 0.3rem; border-radius: 0.2rem;">
+                <option value="all">Shiny</option>
+                <option value="true">Shiny</option>
+                <option value="false">Not shiny</option>
+            </select>
+            <select id="dict-filter-obtainable" style="background: var(--dark1); color: var(--light2); border: none; padding: 0.3rem; border-radius: 0.2rem;">
+                <option value="all">Obtainable</option>
+                <option value="true">Obtainable</option>
+                <option value="false">Not obtainable</option>
+            </select>
+            <select id="dict-filter-obtained" style="background: var(--dark1); color: var(--light2); border: none; padding: 0.3rem; border-radius: 0.2rem;">
+                <option value="all">Method</option>
+                <option value="wild">Wild</option>
+                <option value="event">Event</option>
+                <option value="park">Park</option>
+                <option value="frontier">Frontier</option>
+                <option value="mart">Mart</option>
+                <option value="arceus">Arceus</option>
+            </select>
+            <select id="dict-filter-generation" style="background: var(--dark1); color: var(--light2); border: none; padding: 0.3rem; border-radius: 0.2rem;">
+                <option value="all">Generation</option>
+                <option value="1">Gen 1</option>
+                <option value="2">Gen 2</option>
+                <option value="3">Gen 3</option>
+                <option value="4">Gen 4</option>
+                <option value="5">Gen 5</option>
+                <option value="6">Gen 6</option>
+                <option value="7">Gen 7</option>
+                <option value="8">Gen 8</option>
+                <option value="9">Gen 9</option>
+            </select>
+            <select id="dict-filter-rarity" style="background: var(--dark1); color: var(--light2); border: none; padding: 0.3rem; border-radius: 0.2rem;">
+                <option value="all">Rarity</option>
+                <option value="normal">Normal</option>
+                <option value="legendary">Legendary</option>
+                <option value="singular">Singular</option>
+            </select>
+            <select id="dict-filter-division" style="background: var(--dark1); color: var(--light2); border: none; padding: 0.3rem; border-radius: 0.2rem;">
+                <option value="all">Division</option>
+                <option value="D">D</option>
+                <option value="C">C</option>
+                <option value="B">B</option>
+                <option value="A">A</option>
+                <option value="S">S</option>
+                <option value="SS">SS</option>
+                <option value="SSS">SSS</option>
+            </select>
+            <select id="dict-filter-type" style="background: var(--dark1); color: var(--light2); border: none; padding: 0.3rem; border-radius: 0.2rem;">
+                <option value="all">Type</option>
+            </select>
+            <button type="button" onclick="resetDictionaryFilters()" style="background: var(--light1); color: var(--dark1); border: none; padding: 0.3rem 0.5rem; border-radius: 0.2rem; cursor: pointer; font-size: 0.8rem;">Limpiar filtros</button>        </div>
+
         <div style="width: 100%;" data-help="searchDictionary"><input style="cursor: help;" id="dictionary-search" type="text" placeholder="Right Click/Long Press to see keywords"></div>
 
         </div>
@@ -293,6 +351,13 @@
    xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m12 4l-6 6m6-6l6 6m-6-6v10.5m0 5.5v-2.5"/></svg>
         <div id="pokedex-filters">
 
+
+            <div id="pokedex-filters-toggle" onclick="togglePokedexFilters()" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--dark1); border-radius: 0.3rem; margin-bottom: 0.5rem;">
+                <span style="color: var(--light2);">Filters</span>
+                <span id="pokedex-filters-arrow" style="color: var(--light2);">▼</span>
+            </div>
+
+            <div id="pokedex-filters-content" style="display: flex;">
 
             <div class="pokedex-search" id="pokedex-filters-title" style="display: none; cursor: default; text-align: center; justify-content: center;">Select a pokemon to teach Hydro Pump</div>
             
@@ -413,6 +478,49 @@
                 <option value=true>favorites</option>
             </select>
 
+            <select id="pokedex-filter-caught">
+                <option value="all">caught</option>
+                <option value="true">caught</option>
+                <option value="false">not caught</option>
+            </select>
+
+            <select id="pokedex-filter-form">
+                <option value="all">form</option>
+                <option value="classic">original</option>
+                <option value="variant">variant</option>
+            </select>
+
+            <select id="pokedex-filter-obtained">
+                <option value="all">obtained</option>
+                <option value="wild">wild</option>
+                <option value="arceus">arceus</option>
+                <option value="event">event</option>
+                <option value="park">park</option>
+                <option value="frontier">frontier</option>
+                <option value="mart">mart</option>
+                <option value="unobtainable">unobtainable</option>
+            </select>
+
+            <select id="pokedex-filter-generation">
+                <option value="all">generation</option>
+                <option value="1">Gen 1</option>
+                <option value="2">Gen 2</option>
+                <option value="3">Gen 3</option>
+                <option value="4">Gen 4</option>
+                <option value="5">Gen 5</option>
+                <option value="6">Gen 6</option>
+                <option value="7">Gen 7</option>
+                <option value="8">Gen 8</option>
+                <option value="9">Gen 9</option>
+            </select>
+
+            <select id="pokedex-filter-rarity">
+                <option value="all">rarity</option>
+                <option value="normal">normal</option>
+                <option value="legendary">legendary</option>
+                <option value="singular">singular</option>
+            </select>
+
               <select id="pokedex-filter-tag" style="display: none;">
                 <option value="all">tag</option>
                 <option value="none">none</option>
@@ -456,6 +564,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M5.5 7A1.5 1.5 0 0 1 4 5.5A1.5 1.5 0 0 1 5.5 4A1.5 1.5 0 0 1 7 5.5A1.5 1.5 0 0 1 5.5 7m15.91 4.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.11 0-2 .89-2 2v7c0 .55.22 1.05.59 1.41l8.99 9c.37.36.87.59 1.42.59s1.05-.23 1.41-.59l7-7c.37-.36.59-.86.59-1.41c0-.56-.23-1.06-.59-1.42"/></svg>    
             Tags</div>
 
+            </div>
             </div>
             </div>
 
@@ -1744,6 +1853,7 @@ Game Guide
     <script src="scripts/moveDictionary.js"></script>
     <script src="scripts/itemDictionary.js"></script>
     <script src="scripts/pkmnDictionary.js"></script>
+    <script src="scripts/pokedex.js"></script>
     <script src="scripts/areasDictionary.js"></script>
 
     <script src="scripts/PR/autoTeamBuilding.js"></script>
