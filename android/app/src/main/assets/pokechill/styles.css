@@ -5194,7 +5194,7 @@ background:
 
 @media (max-width: 600px) {
     #dictionary-list > .dictionary-pkmn-entry {
-        width: 100%;
+        width: 48%;
     }
 }
 
@@ -5224,9 +5224,10 @@ background:
 #dictionary-header{
     width: 100%;
     display: flex;
-    justify-content: end;
-    align-items: end;
-    height: 9rem;
+    justify-content: flex-start;
+    align-items: center;
+    height: auto;
+    min-height: 9rem;
     background: 
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%239C92AC' fill-opacity='0.2' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E"),
     var(--dark2);
@@ -5304,6 +5305,11 @@ background:
 }
 
 
+#dictionary-pokemon-filters {
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: center;
+}
 
 #dictionary-pokemon-filters select {
     font-size: 0.8rem;
